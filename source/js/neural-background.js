@@ -5,18 +5,12 @@
   const template = document.getElementById('observatory-template');
   if (home && template) home.prepend(template.content.cloneNode(true));
   const canvas = document.getElementById('neural-background');
-  const toggle = document.getElementById('neural-toggle');
-  if (!canvas || !toggle) return;
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const coarse = matchMedia('(pointer: coarse)');
-  const storageKey = 'learning-blog:particles';
   let enabled = !reduced.matches;
-  try {
-    const saved = localStorage.getItem(storageKey);
-    if (saved !== null && !reduced.matches) enabled = saved === 'on';
-  } catch { /* Storage is optional. */ }
   let width = 0, height = 0, nodes = [], frame = 0, last = 0;
   let stars = [], meteors = [], nextMeteor = 0;
   const pointer = { x: 0, y: 0, active: false };
@@ -123,17 +117,8 @@
     last = 0;
     canvas.hidden = !enabled;
     document.documentElement.classList.toggle('space-paused', !enabled);
-    toggle.hidden = false;
-    toggle.setAttribute('aria-pressed', String(enabled));
-    toggle.textContent = enabled ? '深空 · 开' : '深空 · 关';
-    toggle.setAttribute('aria-label', enabled ? '关闭深空动画' : '开启深空动画');
     if (enabled && !document.hidden) frame = requestAnimationFrame(draw);
   }
-  toggle.addEventListener('click', () => {
-    enabled = !enabled;
-    try { localStorage.setItem(storageKey, enabled ? 'on' : 'off'); } catch { /* Optional. */ }
-    sync();
-  });
   document.addEventListener('pointermove', event => {
     if (event.pointerType === 'touch') return;
     pointer.x = event.clientX; pointer.y = event.clientY; pointer.active = true;
