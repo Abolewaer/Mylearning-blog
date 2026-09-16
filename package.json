@@ -1,0 +1,26 @@
+{
+  "name": "learning-blog",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "hexo clean && hexo generate",
+    "preview": "hexo server --config _config.yml,_config.local.yml --ip 127.0.0.1 --port 4000",
+    "cms": "node tools/local-cms.cjs",
+    "new": "hexo new"
+  },
+  "hexo": { "version": "8.1.2" },
+  "dependencies": {
+    "hexo": "8.1.2",
+    "hexo-theme-next": "8.29.0",
+    "hexo-generator-index": "^4.0.0",
+    "hexo-generator-archive": "^2.0.0",
+    "hexo-generator-category": "^2.0.0",
+    "hexo-generator-tag": "^2.0.0",
+    "hexo-generator-searchdb": "^1.5.0",
+    "hexo-renderer-ejs": "^2.0.0",
+    "hexo-renderer-marked": "^7.0.1",
+    "hexo-renderer-stylus": "^3.0.1",
+    "hexo-server": "^3.0.0"
+  },
+  "devDependencies": { "decap-server": "3.11.2" }
+}

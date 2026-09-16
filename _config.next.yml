@@ -1,0 +1,57 @@
+scheme: Mist
+darkmode: false
+favicon:
+  small: /images/avatar.svg
+  medium: /images/avatar.svg
+  apple_touch_icon: /images/avatar.svg
+menu:
+  home: / || fa fa-home
+  categories: /categories/ || fa fa-th
+  tags: /tags/ || fa fa-tags
+  archives: /archives/ || fa fa-archive
+  about: /about/ || fa fa-user
+  写作: /admin/ || fa fa-pen
+menu_settings:
+  icons: false
+  badges: false
+sidebar:
+  position: left
+  display: post
+avatar:
+  url: /images/avatar.svg
+  rounded: true
+  rotated: false
+site_state: true
+social:
+  写作后台: /admin/ || fa fa-pen
+footer:
+  since: 2026
+  powered: true
+  theme:
+    enable: true
+    version: false
+toc:
+  enable: true
+  number: false
+  wrap: true
+post_meta:
+  item_text: true
+  created_at: true
+  updated_at:
+    enable: true
+    another_day: true
+  categories: true
+local_search:
+  enable: true
+  trigger: auto
+  top_n_per_article: 2
+  unescape: false
+  preload: false
+back2top:
+  enable: true
+  sidebar: false
+  scrollpercent: true
+motion:
+  enable: false
+custom_file_path:
+  style: source/_data/styles.styl

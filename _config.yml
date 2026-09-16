@@ -1,0 +1,47 @@
+title: 学习札记
+subtitle: 学习笔记 · 论文阅读 · 项目实践
+description: 记录学习过程，整理实践成果。
+author: Abolewaer
+language: zh-CN
+timezone: Asia/Shanghai
+url: https://abolewaer.github.io/Mylearning-blog
+root: /Mylearning-blog/
+permalink: posts/:title/
+pretty_urls:
+  trailing_index: false
+source_dir: source
+public_dir: public
+tag_dir: tags
+archive_dir: archives
+category_dir: categories
+skip_render:
+  - admin/**
+  - images/**
+new_post_name: :title.md
+default_layout: post
+external_link:
+  enable: true
+  field: site
+filename_case: 0
+render_drafts: false
+post_asset_folder: false
+relative_link: false
+future: false
+index_generator:
+  path: ''
+  per_page: 8
+  order_by: -date
+per_page: 8
+pagination_dir: page
+theme: next
+highlight:
+  enable: false
+syntax_highlighter: prismjs
+prismjs:
+  preprocess: true
+  line_number: true
+search:
+  path: search.json
+  field: post
+  content: true
+  format: html
