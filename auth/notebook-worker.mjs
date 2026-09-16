@@ -83,8 +83,8 @@ async function proxyWriting(request,env,fetcher) {
   if (!env.GITHUB_TOKEN) return json({message:'写作存储尚未配置'},503,origin);
   const path=url.pathname.slice('/github'.length), root='/repos/Abolewaer/Mylearning-blog';
   const read=request.method==='GET';
-  const permitted=(read && (path==='/user' || path===root)) ||
-    (path.startsWith(root+'/') && /^(contents|git|pulls|branches|compare|merges)(\/|$)/.test(path.slice(root.length+1)));
+  const permitted=(read && (path==='/user' || /^\/users\/[A-Za-z0-9-]+$/.test(path) || path===root)) ||
+    (path.startsWith(root+'/') && /^(contents|git|pulls|branches|compare|merges|issues|labels|commits)(\/|$)/.test(path.slice(root.length+1)));
   const decoded=decodeURIComponent(path);
   if (!permitted || decoded.includes('\\') || decoded.split('/').some(p=>p==='.' || p==='..') || !['GET','POST','PUT','PATCH','DELETE'].includes(request.method)) return json({message:'该操作不属于博客写作范围'},403,origin);
   const body=read ? undefined : await request.text();
