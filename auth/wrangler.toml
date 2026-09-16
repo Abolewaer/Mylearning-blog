@@ -4,7 +4,7 @@ compatibility_date = "2026-09-16"
 
 [vars]
 SITE_ORIGIN = "https://abolewaer.github.io"
-# Set MIMO_MODEL to a model available to your account before deployment.
+MIMO_MODEL = "mimo-v2.5"
 
 [[durable_objects.bindings]]
 name = "QUOTAS"
