@@ -49,7 +49,8 @@
         message(text, true);
         throw new Error(text);
       }
-      return entry;
+      // Decap treats any returned value as replacement entry.data.
+      // This validation-only hook must return nothing to preserve the document.
     } });
   };
   document.addEventListener('paste', async event => {
