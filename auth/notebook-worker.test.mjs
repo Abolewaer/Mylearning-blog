@@ -14,6 +14,15 @@ function environment() {
 }
 function request(path, body, extra = {}) { return new Request('https://worker.example'+path, { method:'POST',headers:{Origin:base.SITE_ORIGIN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1',...extra},body:JSON.stringify(body) }); }
 const question = { question: '解释公式', note: { title:'矩阵',body:'$x_i$' } };
+test('assistant receives the admin guide and cannot claim action tools', async () => {
+  let system = '';
+  const response = await handleNotebook(request('/chat', { question: '怎么删除笔记？' }), environment(), async (_url, options) => {
+    system = JSON.parse(options.body).messages[0].content;
+    return Response.json({ choices: [{ message: { content: '请点击文章旁的删除按钮。' } }] });
+  });
+  assert.equal(response.status, 200);
+  for (const text of ['垃圾桶', '第二次确认', '返回博客', '10MB', '没有执行删除']) assert.ok(system.includes(text));
+});
 test('PIN lives on server; invalid PIN and forged role cannot grant owner',async()=>{
   const env=environment();
   assert.equal((await handleNotebook(request('/owner/login',{pin:'wrong'}),env)).status,401);
