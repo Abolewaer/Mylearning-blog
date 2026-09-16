@@ -16,7 +16,7 @@
       load_config_file: false,
       locale: 'zh_Hans',
       backend: { name: 'github', repo: settings.repo || 'unconfigured/learning-blog', branch: 'main',
-        ...(settings.oauthBaseUrl ? { base_url: settings.oauthBaseUrl, auth_endpoint: 'auth' } : {}) },
+        ...(settings.oauthBaseUrl ? { api_root: settings.oauthBaseUrl + '/github', use_graphql: false } : {}) },
       local_backend: local ? { url: 'http://127.0.0.1:8081/api/v1' } : false,
       publish_mode: local ? 'simple' : 'editorial_workflow',
       site_url: local ? location.origin : settings.siteUrl,
@@ -47,6 +47,7 @@
     };
     window.CMS.registerPreviewStyle('body { font-family: SimHei, Heiti SC, Microsoft YaHei, sans-serif; color: #d0dfd9; background: #0a1014; font-size: 17px; line-height: 1.95; padding: 24px; } img { max-width: 100%; } pre { overflow: auto; padding: 16px; background: #15232b; } h1,h2,h3 { line-height: 1.5; } .katex-display { overflow-x: auto; overflow-y: hidden; padding: 12px 0; } a { color: #8cebb3; } img { max-width:100%; } table { border-collapse:collapse; } td,th { border:1px solid #365047; padding:8px; }', { raw: true });
     window.registerNotebookMath();
+    if (!local) window.installOwnerLogin(settings.oauthBaseUrl);
     window.CMS.init({ config });
     document.getElementById('loading').remove();
   } catch (error) { status.textContent = error.message || '后台加载失败，请重试。'; }

@@ -1,4 +1,3 @@
-import { completed } from './worker.mjs';
 const enc = new TextEncoder();
 const b64 = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 async function sign(text, secret) {
@@ -76,29 +75,43 @@ export class QuotaStore {
     return Response.json(result);
   }
 }
-function loginPage(csrf, error = '') {
-  return new Response(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>作者验证 · 学习札记</title><style>body{background:#090f15;color:#d8e8df;font-family:SimHei,sans-serif;padding:10vh 24px}form{max-width:360px;margin:auto;padding:28px;border:1px solid #345346;background:#111e24}input,button{box-sizing:border-box;width:100%;padding:12px;margin:12px 0;background:#14232b;color:#d8e8df;border:1px solid #345346}button{background:#a3eab3;color:#090f15;cursor:pointer}h1{font-size:24px;color:#a3eab3}</style><form method="post" action="/auth"><h1>作者验证</h1><p>验证后进入博客写作后台。</p><p>${error}</p><input type="hidden" name="csrf" value="${csrf}"><label>作者密码<input name="pin" type="password" required autocomplete="current-password"></label><label><input type="checkbox" name="remember" value="yes" checked style="width:auto">长期记住此浏览器</label><button>验证并进入</button></form></html>`,
-    { headers: { 'Content-Type': 'text/html;charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
-      'Set-Cookie': `__Host-notebook-csrf=${csrf}; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`,
-      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" } });
+async function proxyWriting(request,env,fetcher) {
+  const url=new URL(request.url), origin=request.headers.get('Origin');
+  const token=(request.headers.get('Authorization') || '').replace(/^(Bearer|token) /i,'');
+  const owner=await sessionData(token,env,Date.now(),request.headers.get('CF-Connecting-IP') || '');
+  if (!owner) return json({message:'作者验证已过期，请重新输入密码'},401,origin);
+  if (!env.GITHUB_TOKEN) return json({message:'写作存储尚未配置'},503,origin);
+  const path=url.pathname.slice('/github'.length), root='/repos/Abolewaer/Mylearning-blog';
+  const read=request.method==='GET';
+  const permitted=(read && (path==='/user' || path===root)) ||
+    (path.startsWith(root+'/') && /^(contents|git|pulls|branches|compare|merges)(\/|$)/.test(path.slice(root.length+1)));
+  const decoded=decodeURIComponent(path);
+  if (!permitted || decoded.includes('\\') || decoded.split('/').some(p=>p==='.' || p==='..') || !['GET','POST','PUT','PATCH','DELETE'].includes(request.method)) return json({message:'该操作不属于博客写作范围'},403,origin);
+  const body=read ? undefined : await request.text();
+  if (body && enc.encode(body).length>8*1024*1024) return json({message:'单次上传超过 8MB'},413,origin);
+  const response=await fetcher('https://api.github.com'+path+url.search,{method:request.method,redirect:'manual',headers:{
+    Authorization:'Bearer '+env.GITHUB_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json',
+    'User-Agent':'learning-notebook-writer','X-GitHub-Api-Version':'2022-11-28'
+  },body,signal:AbortSignal.timeout(30000)});
+  if(response.status>=300 && response.status<400) return json({message:'写作存储返回了不支持的跳转'},502,origin);
+  const headers=new Headers({'Content-Type':response.headers.get('Content-Type') || 'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':origin,'Vary':'Origin','Access-Control-Expose-Headers':'Link, ETag','X-Content-Type-Options':'nosniff'});
+  const link=response.headers.get('Link');if(link)headers.set('Link',link.replaceAll('https://api.github.com',url.origin+'/github'));
+  if(response.headers.has('ETag'))headers.set('ETag',response.headers.get('ETag'));
+  return new Response(response.body,{status:response.status,headers});
 }
 export async function handleNotebook(request, env, fetcher = fetch) {
   const url = new URL(request.url), origin = request.headers.get('Origin') || '';
-  const isAuth = url.pathname === '/auth';
-  const allowed = origin === env.SITE_ORIGIN || (isAuth && origin === url.origin);
+  const allowed = origin === env.SITE_ORIGIN;
   if (request.method === 'OPTIONS') return new Response(null, { status: allowed ? 204 : 403, headers: {
-    'Access-Control-Allow-Origin': allowed ? origin : '', 'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin' } });
-  if (request.method === 'GET' && isAuth) {
-    const token=(request.headers.get('Cookie') || '').match(/(?:^|;\s*)__Host-notebook-owner=([^;]+)/)?.[1];
-    if (token && env.GITHUB_TOKEN && await sessionData(token,env,Date.now(),request.headers.get('CF-Connecting-IP') || '')) {
-      const response=completed(env.GITHUB_TOKEN,env.SITE_ORIGIN);
-      response.headers.append('Set-Cookie',`__Host-notebook-owner=${token}; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=34560000`);
-      return response;
-    }
-    return loginPage(crypto.randomUUID());
+    'Access-Control-Allow-Origin': allowed ? origin : '', 'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With', 'Vary': 'Origin' } });
+  if (url.pathname === '/auth' || url.pathname === '/owner/writing-token') return json({error:'旧登录入口已关闭，请返回博客写作页面使用密码登录。'},410,origin);
+  if (url.pathname.startsWith('/github/')) {
+    if (!allowed) return json({error:'来源不允许'},403);
+    try { return await proxyWriting(request,env,fetcher); }
+    catch { return json({error:'写作服务暂时不可用，请重试'},503,origin); }
   }
-  if (request.method !== 'POST' || !['/auth','/owner/login','/owner/devices','/owner/revoke','/owner/check','/chat'].includes(url.pathname)) return json({ error: 'Not found' },404);
+  if (request.method !== 'POST' || !['/owner/login','/owner/devices','/owner/revoke','/owner/check','/chat'].includes(url.pathname)) return json({ error: 'Not found' },404);
   if (!allowed) return json({ error: '来源不允许' },403);
   if (!env.OWNER_PIN || !env.SESSION_SECRET || !env.SITE_ORIGIN) return json({ error: '作者服务尚未配置' },503,origin);
   if (Number(request.headers.get('Content-Length')) > 220000) return json({ error: '请求内容过长' },413,origin);
@@ -106,30 +119,17 @@ export async function handleNotebook(request, env, fetcher = fetch) {
   try {
     const raw = await request.text();
     if (enc.encode(raw).length > 220000) return json({ error: '请求内容过长' },413,origin);
-    data = isAuth ? Object.fromEntries(new URLSearchParams(raw)) : JSON.parse(raw);
+    data = JSON.parse(raw);
   } catch { return json({ error: '请求格式错误' },400,origin); }
   if (!data || typeof data !== 'object' || Array.isArray(data)) return json({ error: '请求格式错误' },400,origin);
   const ip = request.headers.get('CF-Connecting-IP');
   if (!ip) return json({ error: '无法确认请求来源，请稍后重试' },503,origin);
   const ipKey = await sign(ip, env.SESSION_SECRET);
   try {
-    if (isAuth || url.pathname === '/owner/login') {
-      if (isAuth) {
-        const cookie = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)__Host-notebook-csrf=([a-f0-9-]+)/)?.[1];
-        if (!cookie || !/^[a-f0-9-]{36}$/.test(data.csrf || '') || !equal(cookie, data.csrf)) return json({ error: '验证页面已失效，请重新打开' },403,origin);
-      }
+    if (url.pathname === '/owner/login') {
       const q = await quota(env, 'login:'+ipKey, 'login');
       if (!q.ok) return json({ error: '验证次数过多，请稍后再试' },429,origin);
-      if (typeof data.pin !== 'string' || data.pin.length > 128 || !equal(await sign(data.pin, env.SESSION_SECRET), await sign(env.OWNER_PIN, env.SESSION_SECRET))) return isAuth ? loginPage(crypto.randomUUID(), '密码不正确，请重试。') : json({ error: '密码不正确' },401,origin);
-      if (isAuth) {
-        if (!env.GITHUB_TOKEN) return json({ error: '写作服务尚未配置' },503,origin);
-        const response=completed(env.GITHUB_TOKEN, env.SITE_ORIGIN);
-        if (data.remember === 'yes') {
-          const token=await ownerSession(env,Date.now(),{remember:true,ip,name:'写作后台 · '+(request.headers.get('User-Agent') || '浏览器').slice(0,60)});
-          response.headers.append('Set-Cookie',`__Host-notebook-owner=${token}; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=34560000`);
-        }
-        return response;
-      }
+      if (typeof data.pin !== 'string' || data.pin.length > 128 || !equal(await sign(data.pin, env.SESSION_SECRET), await sign(env.OWNER_PIN, env.SESSION_SECRET))) return json({ error: '密码不正确' },401,origin);
       return json({ token: await ownerSession(env,Date.now(),{remember:data.remember===true,ip,name:data.name}), expiresIn: data.remember===true ? null : 7200 },200,origin);
     }
     const auth = request.headers.get('Authorization');

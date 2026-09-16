@@ -23,3 +23,5 @@ body{background:#090f15!important;color:#d8e8df!important;font-family:SimHei,"He
 #nc-root [class*="EditorToolbar"] a,#nc-root [class*="EditorToolbar"] span,#nc-root [class*="BackArrow"]{color:#a3eab3!important}
 
 #nc-root [class*="FieldLabel"]::after,#nc-root [class*="FieldLabel"]::before{background:#14232b!important;border-color:#14232b!important}
+
+.owner-login-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:#090f15;color:#d8e8df;font-family:SimHei,sans-serif}.owner-login-page form{width:min(420px,100%);padding:28px;border:1px solid #345346;background:#111e24}.owner-login-page h1{color:#a3eab3;font-size:25px}.owner-login-page input[type=password]{display:block;box-sizing:border-box;width:100%;padding:12px;margin:10px 0;background:#14232b;color:#d8e8df;border:1px solid #345346}.owner-remember{display:block;margin:16px 0}.owner-login-page button{width:100%;padding:12px;background:#a3eab3;color:#090f15;border:0;cursor:pointer}.owner-login-page button:disabled{opacity:.6}.owner-login-page a{display:block;margin-top:18px;color:#a3eab3}.owner-login-page [role=alert]{color:#ffb8a8;overflow-wrap:anywhere}

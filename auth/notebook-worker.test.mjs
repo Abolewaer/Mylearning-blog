@@ -50,15 +50,6 @@ test('cross-origin, expired session, oversized note and malformed body fail clos
   assert.equal((await handleNotebook(request('/chat',{...question,note:{title:'x',body:'x'.repeat(100001)}}),env,never)).status,400);
   assert.equal((await handleNotebook(request('/chat',null),env,never)).status,400);
 });
-test('writing auth requires CSRF and correct PIN before delivering GitHub token',async()=>{
-  const env=environment();const csrf=crypto.randomUUID();
-  const req=(pin,withCookie)=>new Request('https://worker.example/auth',{method:'POST',headers:{Origin:'https://worker.example','CF-Connecting-IP':'192.0.2.1',Cookie:withCookie?'__Host-notebook-csrf='+csrf:''},body:new URLSearchParams({pin,csrf})});
-  assert.equal((await handleNotebook(req(base.OWNER_PIN,false),env)).status,403);
-  assert.doesNotMatch(await (await handleNotebook(req('wrong',true),env)).text(),/test-github-token/);
-  const r=await handleNotebook(req(base.OWNER_PIN,true),env);
-  assert.match(await r.text(),/event.source !== window.opener/);
-});
-
 test('remembered devices survive IP changes and revocation blocks reuse',async()=>{
  const env=environment();
  const login=await (await handleNotebook(request('/owner/login',{pin:base.OWNER_PIN,remember:true,name:'我的电脑'}),env)).json();
@@ -71,14 +62,23 @@ test('remembered devices survive IP changes and revocation blocks reuse',async()
  assert.equal((await handleNotebook(request('/owner/revoke',{id:list.currentId},headers),env)).status,200);
  assert.equal((await handleNotebook(request('/owner/check',{},headers),env)).status,401);
 });
-test('writing login remembers browser in HttpOnly cookie and rejects revoked cookie',async()=>{
- const env=environment();const csrf=crypto.randomUUID();
- const response=await handleNotebook(new Request('https://worker.example/auth',{method:'POST',headers:{Origin:'https://worker.example','CF-Connecting-IP':'192.0.2.1',Cookie:'__Host-notebook-csrf='+csrf},body:new URLSearchParams({pin:base.OWNER_PIN,csrf,remember:'yes'})}),env);
- const cookie=response.headers.getSetCookie().find(c=>c.startsWith('__Host-notebook-owner='));assert.match(cookie,/HttpOnly/);
- const token=cookie.split(';')[0].split('=')[1];
- const req=()=>new Request('https://worker.example/auth',{headers:{Cookie:cookie.split(';')[0]}});
- assert.match(await (await handleNotebook(req(),env)).text(),/test-github-token/);
+
+test('legacy credential delivery endpoints are disabled',async()=>{
+ const env=environment();for(const path of ['/auth','/owner/writing-token']){
+ const r=await handleNotebook(request(path,{pin:base.OWNER_PIN}),env);
+ assert.equal(r.status,410);assert.doesNotMatch(await r.text(),/test-github-token/);
+ }
+});
+test('writing proxy keeps GitHub secret server-side and restricts repository and origin',async()=>{
+ const env=environment(),token=await ownerSession(env);let calls=0;
+ const req=(path,auth=token,origin=base.SITE_ORIGIN)=>new Request('https://worker.example/github'+path,{headers:{Origin:origin,Authorization:'token '+auth}});
+ const upstream=async(url,opts)=>{calls++;assert.equal(opts.headers.Authorization,'Bearer '+base.GITHUB_TOKEN);assert.match(url,/^https:\/\/api.github.com\//);return Response.json({login:'owner'},{headers:{Link:'<https://api.github.com/repos/Abolewaer/Mylearning-blog/contents?page=2>; rel="next"'}});};
+ const r=await handleNotebook(req('/user'),env,upstream);assert.equal(r.status,200);assert.doesNotMatch(await r.text(),/test-github-token/);assert.match(r.headers.get('Link'),/worker.example\/github/);
+ assert.equal((await handleNotebook(req('/repos/Abolewaer/Mylearning-blog/contents/source/_posts'),env,upstream)).status,200);
+ for(const path of ['/repos/other/repo/contents','/repos/Abolewaer/Mylearning-blog/hooks','/user/repos']) assert.equal((await handleNotebook(req(path),env,upstream)).status,403);
+ assert.equal((await handleNotebook(req('/user','invalid'),env,upstream)).status,401);
+ assert.equal((await handleNotebook(req('/user',token,'https://evil.example'),env,upstream)).status,403);
  const list=await (await handleNotebook(request('/owner/devices',{}, {Authorization:'Bearer '+token}),env)).json();
  await handleNotebook(request('/owner/revoke',{id:list.currentId},{Authorization:'Bearer '+token}),env);
- assert.doesNotMatch(await (await handleNotebook(req(),env)).text(),/test-github-token/);
+ assert.equal((await handleNotebook(req('/user'),env,upstream)).status,401);assert.equal(calls,2);
 });
