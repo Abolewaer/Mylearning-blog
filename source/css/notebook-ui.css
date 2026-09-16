@@ -35,3 +35,5 @@
 @media(max-width:600px){.notebook-assistant{right:12px;bottom:16px}.assistant-panel{bottom:76px}.assistant-launcher{padding-right:10px}}
 @media(prefers-reduced-motion:reduce){.assistant-ghost{animation:none}}
 @media print{.notebook-assistant{display:none!important}}
+
+.assistant-device-list{max-height:200px;overflow:auto;padding:12px;border-bottom:1px solid #345346;font-size:12px;overflow-wrap:anywhere}.assistant-device-list>div{padding-bottom:10px}.assistant-auth input[type=checkbox]{width:auto;margin-right:8px}.assistant-controls{flex-wrap:wrap}

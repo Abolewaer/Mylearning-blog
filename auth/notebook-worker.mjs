@@ -6,18 +6,26 @@ async function sign(text, secret) {
   return b64(await crypto.subtle.sign('HMAC', key, enc.encode(text)));
 }
 function equal(a, b) { if (a.length !== b.length) return false; let n = 0; for (let i=0;i<a.length;i++) n |= a.charCodeAt(i)^b.charCodeAt(i); return n===0; }
-export async function ownerSession(env, now = Date.now()) {
-  const payload = b64(enc.encode(JSON.stringify({ role: 'owner', exp: now + 2 * 3600000, id: crypto.randomUUID() })));
+async function devices(env, action, data = {}) {
+  const object = env.QUOTAS.get(env.QUOTAS.idFromName('owner-devices'));
+  return (await object.fetch('https://quota/device/' + action, {method:'POST', body:JSON.stringify(data)})).json();
+}
+export async function ownerSession(env, now = Date.now(), details = {}) {
+  const record = {id:crypto.randomUUID(), name:String(details.name || '作者浏览器').slice(0,80), lastIP:details.ip || '', createdAt:now, lastSeen:now, exp:details.remember ? null : now + 2*3600000};
+  await devices(env,'add',record);
+  const payload = b64(enc.encode(JSON.stringify({role:'owner',exp:record.exp,id:record.id})));
   return payload + '.' + await sign(payload, env.SESSION_SECRET);
 }
-export async function verifyOwner(token, env, now = Date.now()) {
+async function sessionData(token, env, now = Date.now(), ip = '') {
   try {
     const [payload, signature, extra] = token.split('.');
-    if (extra || !payload || !signature || !env.SESSION_SECRET || !equal(signature, await sign(payload, env.SESSION_SECRET))) return false;
+    if (extra || !payload || !signature || !env.SESSION_SECRET || !equal(signature, await sign(payload, env.SESSION_SECRET))) return null;
     const data = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    return data.role === 'owner' && Number.isFinite(data.exp) && data.exp > now;
-  } catch { return false; }
+    if (data.role !== 'owner' || (data.exp !== null && (!Number.isFinite(data.exp) || data.exp <= now))) return null;
+    return (await devices(env,'check',{id:data.id,now,ip})).device || null;
+  } catch { return null; }
 }
+export async function verifyOwner(token, env, now = Date.now()) { return !!await sessionData(token,env,now); }
 function json(data, status = 200, origin = '') {
   return Response.json(data, { status, headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': origin,
     'Vary': 'Origin', 'X-Content-Type-Options': 'nosniff' } });
@@ -31,7 +39,24 @@ async function quota(env, key, kind, action = 'reserve', lease = '') {
 export class QuotaStore {
   constructor(state) { this.state = state; }
   async fetch(request) {
-    const { kind, lease } = await request.json();
+    const input = await request.json();
+    const path = new URL(request.url).pathname;
+    if (path.startsWith('/device/')) {
+      const result = await this.state.storage.transaction(async storage => {
+        let list = (await storage.get('devices') || []).filter(d=>d.exp===null || d.exp>Date.now());
+        let device;
+        if (path === '/device/add') { list.push(input); }
+        if (path === '/device/check') {
+          device = list.find(d=>d.id===input.id && (d.exp===null || d.exp>input.now));
+          if (device) { device.lastSeen=Date.now(); if (input.ip) device.lastIP=input.ip; }
+        }
+        if (path === '/device/revoke') list=list.filter(d=>d.id!==input.id);
+        await storage.put('devices',list);
+        return {devices:list,device};
+      });
+      return Response.json(result);
+    }
+    const {kind,lease} = input;
     const now = Date.now(), day = Math.floor(now / 86400000), minute = Math.floor(now / 60000);
     const result = await this.state.storage.transaction(async storage => {
       let s = await storage.get('quota') || { day, minute, daily: 0, recent: 0, leases: {} };
@@ -52,7 +77,7 @@ export class QuotaStore {
   }
 }
 function loginPage(csrf, error = '') {
-  return new Response(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>作者验证 · 学习札记</title><style>body{background:#090f15;color:#d8e8df;font-family:SimHei,sans-serif;padding:10vh 24px}form{max-width:360px;margin:auto;padding:28px;border:1px solid #345346;background:#111e24}input,button{box-sizing:border-box;width:100%;padding:12px;margin:12px 0;background:#14232b;color:#d8e8df;border:1px solid #345346}button{background:#a3eab3;color:#090f15;cursor:pointer}h1{font-size:24px;color:#a3eab3}</style><form method="post" action="/auth"><h1>作者验证</h1><p>验证后进入博客写作后台。</p><p>${error}</p><input type="hidden" name="csrf" value="${csrf}"><label>作者密码<input name="pin" type="password" required autocomplete="current-password"></label><button>验证并进入</button></form></html>`,
+  return new Response(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>作者验证 · 学习札记</title><style>body{background:#090f15;color:#d8e8df;font-family:SimHei,sans-serif;padding:10vh 24px}form{max-width:360px;margin:auto;padding:28px;border:1px solid #345346;background:#111e24}input,button{box-sizing:border-box;width:100%;padding:12px;margin:12px 0;background:#14232b;color:#d8e8df;border:1px solid #345346}button{background:#a3eab3;color:#090f15;cursor:pointer}h1{font-size:24px;color:#a3eab3}</style><form method="post" action="/auth"><h1>作者验证</h1><p>验证后进入博客写作后台。</p><p>${error}</p><input type="hidden" name="csrf" value="${csrf}"><label>作者密码<input name="pin" type="password" required autocomplete="current-password"></label><label><input type="checkbox" name="remember" value="yes" checked style="width:auto">长期记住此浏览器</label><button>验证并进入</button></form></html>`,
     { headers: { 'Content-Type': 'text/html;charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
       'Set-Cookie': `__Host-notebook-csrf=${csrf}; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`,
       'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" } });
@@ -64,8 +89,16 @@ export async function handleNotebook(request, env, fetcher = fetch) {
   if (request.method === 'OPTIONS') return new Response(null, { status: allowed ? 204 : 403, headers: {
     'Access-Control-Allow-Origin': allowed ? origin : '', 'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin' } });
-  if (request.method === 'GET' && isAuth) return loginPage(crypto.randomUUID());
-  if (request.method !== 'POST' || !['/auth','/owner/login','/chat'].includes(url.pathname)) return json({ error: 'Not found' },404);
+  if (request.method === 'GET' && isAuth) {
+    const token=(request.headers.get('Cookie') || '').match(/(?:^|;\s*)__Host-notebook-owner=([^;]+)/)?.[1];
+    if (token && env.GITHUB_TOKEN && await sessionData(token,env,Date.now(),request.headers.get('CF-Connecting-IP') || '')) {
+      const response=completed(env.GITHUB_TOKEN,env.SITE_ORIGIN);
+      response.headers.append('Set-Cookie',`__Host-notebook-owner=${token}; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=34560000`);
+      return response;
+    }
+    return loginPage(crypto.randomUUID());
+  }
+  if (request.method !== 'POST' || !['/auth','/owner/login','/owner/devices','/owner/revoke','/owner/check','/chat'].includes(url.pathname)) return json({ error: 'Not found' },404);
   if (!allowed) return json({ error: '来源不允许' },403);
   if (!env.OWNER_PIN || !env.SESSION_SECRET || !env.SITE_ORIGIN) return json({ error: '作者服务尚未配置' },503,origin);
   if (Number(request.headers.get('Content-Length')) > 220000) return json({ error: '请求内容过长' },413,origin);
@@ -90,14 +123,30 @@ export async function handleNotebook(request, env, fetcher = fetch) {
       if (typeof data.pin !== 'string' || data.pin.length > 128 || !equal(await sign(data.pin, env.SESSION_SECRET), await sign(env.OWNER_PIN, env.SESSION_SECRET))) return isAuth ? loginPage(crypto.randomUUID(), '密码不正确，请重试。') : json({ error: '密码不正确' },401,origin);
       if (isAuth) {
         if (!env.GITHUB_TOKEN) return json({ error: '写作服务尚未配置' },503,origin);
-        return completed(env.GITHUB_TOKEN, env.SITE_ORIGIN);
+        const response=completed(env.GITHUB_TOKEN, env.SITE_ORIGIN);
+        if (data.remember === 'yes') {
+          const token=await ownerSession(env,Date.now(),{remember:true,ip,name:'写作后台 · '+(request.headers.get('User-Agent') || '浏览器').slice(0,60)});
+          response.headers.append('Set-Cookie',`__Host-notebook-owner=${token}; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=34560000`);
+        }
+        return response;
       }
-      return json({ token: await ownerSession(env), expiresIn: 7200 },200,origin);
+      return json({ token: await ownerSession(env,Date.now(),{remember:data.remember===true,ip,name:data.name}), expiresIn: data.remember===true ? null : 7200 },200,origin);
+    }
+    const auth = request.headers.get('Authorization');
+    const owner = auth ? await sessionData(auth.replace(/^Bearer /, ''), env,Date.now(),ip) : null;
+    if (auth && !owner) return json({ error: '作者验证已过期，请重新验证' },401,origin);
+    if (url.pathname.startsWith('/owner/')) {
+      if (!owner) return json({error:'请先验证作者身份'},401,origin);
+      if (url.pathname === '/owner/check') return json({ok:true,id:owner.id},200,origin);
+      if (url.pathname === '/owner/revoke') {
+        if (typeof data.id !== 'string') return json({error:'设备编号无效'},400,origin);
+        await devices(env,'revoke',{id:data.id});
+        return json({ok:true},200,origin);
+      }
+      const result=await devices(env,'list');
+      return json({devices:result.devices,currentId:owner.id},200,origin);
     }
     if (!env.MIMO_API_KEY || !env.MIMO_MODEL) return json({ error: 'MiMo 尚未配置' },503,origin);
-    const auth = request.headers.get('Authorization');
-    const owner = auth ? await verifyOwner(auth.replace(/^Bearer /, ''), env) : false;
-    if (auth && !owner) return json({ error: '作者验证已过期，请重新验证' },401,origin);
     if (typeof data.question !== 'string' || !data.question.trim() || data.question.length > 4000) return json({ error: '问题需为 1–4000 字符' },400,origin);
     if (data.note && (typeof data.note.body !== 'string' || data.note.body.length > 100000 || typeof data.note.title !== 'string' || data.note.title.length > 300)) return json({ error: '笔记内容超过长度限制或格式错误' },400,origin);
     const history = Array.isArray(data.history) ? data.history.slice(-8) : [];

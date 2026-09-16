@@ -6,7 +6,7 @@ function environment() {
   const objects = new Map();
   return { ...base, QUOTAS: { idFromName: x=>x, get(id) {
     if (!objects.has(id)) {
-      let data; const storage = { get:async()=>structuredClone(data), put:async(k,v)=>{data=structuredClone(v);}, transaction:async fn=>fn(storage) };
+      const data=new Map(); const storage = { get:async k=>structuredClone(data.get(k)), put:async(k,v)=>{data.set(k,structuredClone(v));}, transaction:async fn=>fn(storage) };
       objects.set(id,new QuotaStore({storage}));
     }
     return { fetch:(url,opts)=>objects.get(id).fetch(new Request(url,opts)) };
@@ -57,4 +57,28 @@ test('writing auth requires CSRF and correct PIN before delivering GitHub token'
   assert.doesNotMatch(await (await handleNotebook(req('wrong',true),env)).text(),/test-github-token/);
   const r=await handleNotebook(req(base.OWNER_PIN,true),env);
   assert.match(await r.text(),/event.source !== window.opener/);
+});
+
+test('remembered devices survive IP changes and revocation blocks reuse',async()=>{
+ const env=environment();
+ const login=await (await handleNotebook(request('/owner/login',{pin:base.OWNER_PIN,remember:true,name:'我的电脑'}),env)).json();
+ assert.equal(login.expiresIn,null);assert.equal(await verifyOwner(login.token,env,Date.now()+10*365*86400000),true);
+ const headers={Authorization:'Bearer '+login.token,'CF-Connecting-IP':'192.0.2.99'};
+ const list=await (await handleNotebook(request('/owner/devices',{},headers),env)).json();
+ assert.equal(list.devices.length,1);assert.equal(list.devices[0].lastIP,'192.0.2.99');
+ assert.equal(list.devices[0].name,'我的电脑');
+ assert.equal((await handleNotebook(request('/owner/devices',{}),env)).status,401);
+ assert.equal((await handleNotebook(request('/owner/revoke',{id:list.currentId},headers),env)).status,200);
+ assert.equal((await handleNotebook(request('/owner/check',{},headers),env)).status,401);
+});
+test('writing login remembers browser in HttpOnly cookie and rejects revoked cookie',async()=>{
+ const env=environment();const csrf=crypto.randomUUID();
+ const response=await handleNotebook(new Request('https://worker.example/auth',{method:'POST',headers:{Origin:'https://worker.example','CF-Connecting-IP':'192.0.2.1',Cookie:'__Host-notebook-csrf='+csrf},body:new URLSearchParams({pin:base.OWNER_PIN,csrf,remember:'yes'})}),env);
+ const cookie=response.headers.getSetCookie().find(c=>c.startsWith('__Host-notebook-owner='));assert.match(cookie,/HttpOnly/);
+ const token=cookie.split(';')[0].split('=')[1];
+ const req=()=>new Request('https://worker.example/auth',{headers:{Cookie:cookie.split(';')[0]}});
+ assert.match(await (await handleNotebook(req(),env)).text(),/test-github-token/);
+ const list=await (await handleNotebook(request('/owner/devices',{}, {Authorization:'Bearer '+token}),env)).json();
+ await handleNotebook(request('/owner/revoke',{id:list.currentId},{Authorization:'Bearer '+token}),env);
+ assert.doesNotMatch(await (await handleNotebook(req(),env)).text(),/test-github-token/);
 });

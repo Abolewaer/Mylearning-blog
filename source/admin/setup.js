@@ -8,7 +8,7 @@
     const settings = await response.json();
     const local = ['localhost', '127.0.0.1'].includes(location.hostname);
     if (!local && (!settings.repo || !settings.oauthBaseUrl)) {
-      status.textContent = '博客可以阅读。在线写作尚未完成 GitHub 登录配置，请联系站点作者完成配置。';
+      status.textContent = '博客可以阅读。在线写作尚未完成作者服务配置，请联系站点作者完成配置。';
       return;
     }
     const repoBase = settings.siteUrl ? new URL(settings.siteUrl).pathname.replace(/\/$/, '') : '';
