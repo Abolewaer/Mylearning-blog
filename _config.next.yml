@@ -55,3 +55,4 @@ motion:
   enable: false
 custom_file_path:
   style: source/_data/styles.styl
+  bodyEnd: custom/body-end.njk

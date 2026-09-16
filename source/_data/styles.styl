@@ -28,3 +28,39 @@ body
   color white
 ::selection
   background #d8e8db
+
+// The decorative layer never intercepts text selection, links or scrolling.
+#neural-background
+  position fixed
+  inset 0
+  width 100%
+  height 100%
+  pointer-events none
+  z-index 0
+.main, .footer
+  position relative
+  z-index 1
+.post-block
+  background rgba(250, 249, 246, .88)
+.site-title
+  color #234e63
+#neural-toggle
+  position fixed
+  right 18px
+  bottom 76px
+  z-index 100
+  padding 6px 11px
+  border 1px solid #bed2d6
+  border-radius 20px
+  background rgba(250, 249, 246, .94)
+  color #365d6b
+  font-size 13px
+  line-height 1.6
+  cursor pointer
+  box-shadow 0 2px 12px rgba(30, 72, 89, .06)
+#neural-toggle:focus-visible
+  outline 2px solid #2a779f
+  outline-offset 3px
+@media print
+  #neural-background, #neural-toggle
+    display none !important
