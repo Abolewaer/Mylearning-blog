@@ -9,3 +9,5 @@ Github.json
 
 source/vendor/katex/
 source/admin/math-preview.js
+source/js/notebook-assistant.js
+.dev.vars

@@ -1,0 +1,15 @@
+name = "learning-notebook-assistant"
+main = "notebook-worker.mjs"
+compatibility_date = "2026-09-16"
+
+[vars]
+SITE_ORIGIN = "https://abolewaer.github.io"
+# Set MIMO_MODEL to a model available to your account before deployment.
+
+[[durable_objects.bindings]]
+name = "QUOTAS"
+class_name = "QuotaStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["QuotaStore"]

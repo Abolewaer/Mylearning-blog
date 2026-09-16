@@ -12,3 +12,7 @@ require('esbuild').buildSync({
   platform: 'browser', outfile: path.join(root, 'source/admin/math-preview.js'),
   legalComments: 'eof'
 });
+require('esbuild').buildSync({
+  entryPoints: [path.join(root, 'lib/assistant.js')], bundle: true, minify: true,
+  platform: 'browser', outfile: path.join(root, 'source/js/notebook-assistant.js'), legalComments: 'eof'
+});

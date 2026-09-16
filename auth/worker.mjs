@@ -10,7 +10,7 @@ function text(message, status = 200, extra = {}) {
   return new Response(message, { status, headers: { ...baseHeaders, 'Content-Type': 'text/plain; charset=utf-8', ...extra } });
 }
 function safeJSON(value) { return JSON.stringify(value).replace(/</g, '\\u003c'); }
-function completed(token, origin) {
+export function completed(token, origin) {
   const nonce = crypto.randomUUID();
   const message = `authorization:github:success:${JSON.stringify({ token, provider: 'github' })}`;
   const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>登录成功</title><p>登录成功，正在返回编辑器。</p><script nonce="${nonce}">

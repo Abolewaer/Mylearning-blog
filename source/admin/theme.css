@@ -1,0 +1,25 @@
+/* Match the reading surface without recoloring the preview iframe or images. */
+body{margin:0;background:#090f15;color:#d8e8df;font-family:SimHei,"Heiti SC","Microsoft YaHei",sans-serif}
+#loading{max-width:620px;margin:12vh auto;padding:32px;background:#111e24;border:1px solid #345346;box-shadow:5px 5px 0 #020706;line-height:1.9}
+#loading h1{color:#a3eab3;font-size:27px}#loading a{color:#a3eab3}
+#nc-root{color-scheme:dark;font-family:SimHei,"Heiti SC","Microsoft YaHei",sans-serif}
+#nc-root [class*="AppHeader"],#nc-root [class*="AppMainContainer"],#nc-root [class*="SidebarContainer"],#nc-root [class*="CollectionMain"],#nc-root [class*="EditorContainer"],#nc-root [class*="EditorControlPane"],#nc-root [class*="ControlPaneContainer"],#nc-root [class*="ToolbarContainer"],#nc-root [class*="PreviewPaneContainer"],#nc-root [class*="ListCard"],#nc-root [class*="CollectionContainer"],#nc-root [class*="EditorInterface"]{background:#090f15!important;color:#d8e8df!important}
+#nc-root [class*="ControlContainer"],#nc-root [class*="StyledControl"],#nc-root [class*="ObjectWidget"],#nc-root [class*="Dropdown"],#nc-root [class*="MenuList"],#nc-root [class*="Option"],#nc-root [class*="Card"],#nc-root [class*="WidgetPreview"]{background-color:#14232b!important;color:#d8e8df!important;border-color:#345346!important}
+#nc-root input,#nc-root textarea,#nc-root [contenteditable="true"]{background:#111e24!important;color:#d8e8df!important;border-color:#345346!important;font-family:inherit!important}
+#nc-root h1,#nc-root h2,#nc-root h3,#nc-root label,#nc-root [class*="ControlLabel"]{color:#d8e8df!important}
+#nc-root a,#nc-root [class*="ToolbarButton"],#nc-root [class*="SearchIcon"]{color:#a3eab3!important}
+#nc-root button{border-radius:0!important;font-family:inherit!important}
+#nc-root [class*="Hint"],#nc-root [class*="Description"]{color:#93ada1!important}
+#nc-root [class*="PrimaryButton"]{background:#a3eab3!important;color:#0a1710!important}
+#nc-root [class*="ControlBar"],#nc-root [class*="Toolbar"]{background-color:#14232b!important}
+#nc-root [class*="secondary"]{color:#a3eab3!important}
+body{background:#090f15!important;color:#d8e8df!important;font-family:SimHei,"Heiti SC","Microsoft YaHei",sans-serif!important}
+#nc-root [class*="CollectionTopContainer"],#nc-root [class*="cardTop"],#nc-root [class*="EntryEditor"],#nc-root [class*="ControlPane"]{background:#111e24!important;color:#d8e8df!important;border-color:#345346!important}
+#nc-root .sidebar-active{background:#203c2e!important;color:#a3eab3!important}
+/* Decap 3.16 UI surfaces; vendor is pinned in source/admin/vendor. */
+#nc-root [class*="StyledSplitPane"],#nc-root [class*="FieldLabel"],#nc-root [class*="TopBarContainer"],#nc-root [class*="DateTimeControl"],#nc-root [class$="-control"],#nc-root .css-a8jran-container,#nc-root .css-lshhuz,#nc-root .css-5hiu9n,#nc-root .css-an6rk3{background:#14232b!important;color:#d8e8df!important;border-color:#345346!important}
+#nc-root [contenteditable="true"] p,#nc-root [contenteditable="true"] li,#nc-root [contenteditable="true"] span,#nc-root [class*="BackCollection"]{color:#d8e8df!important}
+#nc-root [contenteditable="true"] code{background:#20352b!important;color:#b9f4cb!important}
+#nc-root [class*="EditorToolbar"] a,#nc-root [class*="EditorToolbar"] span,#nc-root [class*="BackArrow"]{color:#a3eab3!important}
+
+#nc-root [class*="FieldLabel"]::after,#nc-root [class*="FieldLabel"]::before{background:#14232b!important;border-color:#14232b!important}
