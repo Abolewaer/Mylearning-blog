@@ -44,3 +44,5 @@ body{background:#090f15!important;color:#d8e8df!important;font-family:SimHei,"He
 .writing-document:not(.writing-info-open) #nc-root .writing-metadata{display:none!important}
 .writing-document #nc-root .writing-body [class*="ControlHint"]{font-size:12px;line-height:1.6}
 @media(max-width:800px){.writing-tools{padding:0 12px;gap:8px}.writing-tools span{display:none}.writing-document #nc-root [class*="ControlPaneContainer"]{padding:14px 10px 80px!important}.writing-document .writing-fields{padding:18px 12px 32px}.writing-document #nc-root .writing-body [contenteditable="true"]{padding:16px!important;font-size:16px!important}.writing-document #nc-root .writing-title input{font-size:23px!important}}
+
+.paste-image-status{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:2000;max-width:min(580px,85vw);padding:12px 18px;background:#17372a;color:#c8f5d7;border:1px solid #75bb90;box-shadow:0 5px 22px #0008;font:14px/1.6 SimHei,sans-serif}.paste-image-status[hidden]{display:none}.paste-image-status.is-error{background:#442b25;color:#ffd1bf;border-color:#d99478}
