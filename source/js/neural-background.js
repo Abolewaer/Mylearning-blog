@@ -29,11 +29,11 @@
       : Math.min(100, Math.max(30, Math.ceil(width * height / 15000)));
     nodes = Array.from({ length: count }, () => ({
       x: rand(0, width), y: rand(0, height), vx: rand(-0.22, 0.22), vy: rand(-0.22, 0.22),
-      size: rand(1.1, 2.1), hue: Math.random() > 0.5 ? '42, 119, 159' : '40, 147, 143'
+      size: rand(1.1, 2.1), hue: Math.random() > 0.5 ? '92, 173, 255' : '68, 232, 210'
     }));
   }
 
-  function line(a, b, alpha, color = '48, 125, 155') {
+  function line(a, b, alpha, color = '73, 188, 220') {
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
@@ -121,3 +121,4 @@
   resize();
   sync();
 })();
+

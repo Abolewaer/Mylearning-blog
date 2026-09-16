@@ -1,34 +1,118 @@
+:root
+  --body-bg-color #0b111d
+  --content-bg-color #0b111d
+  --card-bg-color #111d2e
+  --text-color #c7d5e5
+  --selection-bg #22506a
+  --selection-color #f0fbff
+  --blockquote-color #99adc5
+  --link-color #96ddeb
+  --link-hover-color #55f2da
+  --brand-color #e1f6ff
+  --brand-hover-color #55f2da
+  --table-row-odd-bg-color #101e30
+  --table-row-hover-bg-color #172b40
+  --menu-item-bg-color #142a3a
+  --theme-color #0b111d
+  --btn-default-bg transparent
+  --btn-default-color #64e8db
+  --btn-default-border-color #326a76
+  --btn-default-hover-bg #64e8db
+  --btn-default-hover-color #0b111d
+  --btn-default-hover-border-color #64e8db
+  --highlight-background #101b2c
+  --highlight-foreground #cfdeed
+  --highlight-gutter-background #101b2c
+  --highlight-gutter-foreground #768da8
+  color-scheme dark
 body
-  background #faf9f6
-  color #343b38
-.header
-  background #faf9f6
+  background #0b111d
+  color var(--text-color)
+// Mist wraps the constrained header in a full-width column.
+.column, .header
+  background #0b111d
+.column
+  position relative
+  z-index 2
+  border-bottom 1px solid #1c3044
 .site-title
   letter-spacing .16em
-.site-subtitle
-  color #768079
+  color #e1f6ff
+  text-shadow 0 0 24px rgba(67, 208, 227, .15)
+.logo-line
+  background #64e8db
+.site-subtitle, .post-meta, .footer, .post-description
+  color #93a8bf
 .main-inner
   padding-top 48px
 .post-title
   font-weight 600
+.post-title a, h1, h2, h3, h4, h5, h6
+  color #e0edf8
 .post-body
   font-size 17px
   line-height 1.95
 .post-body h2
-  border-bottom 1px solid #e5e7e1
+  border-bottom 1px solid #25394e
   padding-bottom 10px
 .post-body a
-  color #396c59
+  color #64e8db
+  border-bottom-color #326a76
+.post-body code
+  color #9be7ed
+  background #142337
+.post-body pre, .post-body pre code
+  color #cfdeed
+  background #101b2c
+  text-shadow none
+.token.comment, .token.prolog, .token.doctype, .token.cdata
+  color #8ca3bd
+.token.punctuation
+  color #b6c9df
+.token.property, .token.tag, .token.constant, .token.symbol, .token.deleted
+  color #ff91ad
+.token.boolean, .token.number
+  color #c2a5ff
+.token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted
+  color #83e3b8
+.token.operator, .token.entity, .token.url
+  color #80dae8
+  background transparent
+.token.atrule, .token.attr-value, .token.keyword
+  color #88baff
+.token.function, .token.class-name
+  color #edce8d
 .post-button .btn
-  border-radius 2px
-  border-color #396c59
-  color #396c59
-.post-button .btn:hover
-  background #396c59
-  color white
+  border-radius 5px
+.menu-item a
+  border-radius 5px
+.menu-item-active a, .menu-item a:hover
+  color #64e8db
+.category-all-page .category-list-count, .tag-list-count
+  background #182a3f
+  color #a4bcd4
+hr, .post-eof
+  background #25394e
+blockquote, th, td
+  border-color #25394e
+.search-pop-overlay
+  background rgba(3, 8, 17, .8)
+.search-popup
+  background #111d2e
+  border 1px solid #2a465e
+.search-popup .search-header
+  background #16263b
+.search-popup input
+  color #e0edf8
+.search-result-list a
+  color #b8dbe8
+.search-keyword
+  color #64e8db
+.sidebar
+  background #0e1827
 ::selection
-  background #d8e8db
-
+  background #22506a
+  color #f0fbff
 // The decorative layer never intercepts text selection, links or scrolling.
 #neural-background
   position fixed
@@ -41,26 +125,25 @@ body
   position relative
   z-index 1
 .post-block
-  background rgba(250, 249, 246, .88)
-.site-title
-  color #234e63
+  background rgba(11, 17, 29, .82)
 #neural-toggle
   position fixed
   right 18px
   bottom 76px
   z-index 100
   padding 6px 11px
-  border 1px solid #bed2d6
+  border 1px solid #326a76
   border-radius 20px
-  background rgba(250, 249, 246, .94)
-  color #365d6b
+  background rgba(14, 29, 44, .94)
+  color #64e8db
   font-size 13px
   line-height 1.6
   cursor pointer
-  box-shadow 0 2px 12px rgba(30, 72, 89, .06)
+  box-shadow 0 0 18px rgba(57, 205, 215, .09)
 #neural-toggle:focus-visible
-  outline 2px solid #2a779f
+  outline 2px solid #64e8db
   outline-offset 3px
 @media print
   #neural-background, #neural-toggle
     display none !important
+
