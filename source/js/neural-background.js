@@ -1,6 +1,9 @@
 /* Lightweight neural-network background. No external dependencies or tracking. */
 (() => {
   'use strict';
+  const home = document.querySelector('.main-inner.index');
+  const template = document.getElementById('observatory-template');
+  if (home && template) home.prepend(template.content.cloneNode(true));
   const canvas = document.getElementById('neural-background');
   const toggle = document.getElementById('neural-toggle');
   if (!canvas || !toggle) return;
@@ -15,6 +18,7 @@
     if (saved !== null && !reduced.matches) enabled = saved === 'on';
   } catch { /* Storage is optional. */ }
   let width = 0, height = 0, nodes = [], frame = 0, last = 0;
+  let stars = [], meteors = [], nextMeteor = 0;
   const pointer = { x: 0, y: 0, active: false };
   const rand = (min, max) => min + Math.random() * (max - min);
 
@@ -31,6 +35,11 @@
       x: rand(0, width), y: rand(0, height), vx: rand(-0.22, 0.22), vy: rand(-0.22, 0.22),
       size: rand(1.1, 2.1), hue: Math.random() > 0.5 ? '92, 173, 255' : '68, 232, 210'
     }));
+    stars = Array.from({ length: Math.min(150, Math.ceil(width * height / 6500)) }, () => ({
+      x: rand(0, width), y: rand(0, height), size: Math.random() > .9 ? 3 : 2,
+      phase: rand(0, Math.PI * 2), alpha: rand(.18, .55)
+    }));
+    meteors = [];
   }
 
   function line(a, b, alpha, color = '73, 188, 220') {
@@ -54,6 +63,23 @@
     const dt = Math.min(elapsed / 16.67 || 1, 2.5);
     last = now;
     ctx.clearRect(0, 0, width, height);
+    for (const star of stars) {
+      ctx.fillStyle = `rgba(174, 216, 205, ${star.alpha * (.75 + .25 * Math.sin(now / 1800 + star.phase))})`;
+      ctx.fillRect(Math.round(star.x / 2) * 2, Math.round(star.y / 2) * 2, star.size, star.size);
+    }
+    if (now > nextMeteor) {
+      meteors.push({ x: rand(width * .25, width * 1.05), y: rand(-60, height * .3), age: 0 });
+      nextMeteor = now + rand(4500, 8500);
+    }
+    meteors = meteors.filter(m => m.age < 110 && m.y < height + 100 && m.x > -180);
+    for (const meteor of meteors) {
+      meteor.x -= 6 * dt; meteor.y += 3.3 * dt; meteor.age += dt;
+      for (let tail = 18; tail >= 0; tail--) {
+        const alpha = (1 - tail / 19) * Math.min(meteor.age / 8, 1) * Math.min((110 - meteor.age) / 20, 1);
+        ctx.fillStyle = `rgba(${tail < 2 ? '221, 255, 233' : '108, 223, 171'}, ${alpha})`;
+        ctx.fillRect(Math.round((meteor.x + tail * 8) / 4) * 4, Math.round((meteor.y - tail * 4.4) / 4) * 4, tail < 3 ? 4 : 3, tail < 3 ? 4 : 3);
+      }
+    }
     for (const node of nodes) {
       if (pointer.active) {
         const dx = pointer.x - node.x, dy = pointer.y - node.y;
@@ -80,14 +106,13 @@
       const node = nodes[i];
       for (let j = i + 1; j < nodes.length; j++) {
         const distance = Math.hypot(node.x - nodes[j].x, node.y - nodes[j].y);
-        if (distance < 145) line(node, nodes[j], (1 - distance / 145) * 0.28);
+        if (distance < 125) line(node, nodes[j], (1 - distance / 125) * 0.13);
       }
       const distance = pointer.active ? Math.hypot(node.x - pointer.x, node.y - pointer.y) : Infinity;
       if (distance < 190) line(node, pointer, (1 - distance / 190) * 0.6, node.hue);
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, node.size + (distance < 190 ? 0.4 : 0), 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${node.hue}, ${distance < 190 ? 0.72 : 0.40})`;
-      ctx.fill();
+      const pixelSize = distance < 190 ? 3 : 2;
+      ctx.fillRect(Math.round(node.x), Math.round(node.y), pixelSize, pixelSize);
     }
     frame = requestAnimationFrame(draw);
   }
@@ -97,10 +122,11 @@
     frame = 0;
     last = 0;
     canvas.hidden = !enabled;
+    document.documentElement.classList.toggle('space-paused', !enabled);
     toggle.hidden = false;
     toggle.setAttribute('aria-pressed', String(enabled));
-    toggle.textContent = enabled ? '粒子 · 开' : '粒子 · 关';
-    toggle.setAttribute('aria-label', enabled ? '关闭粒子背景' : '开启粒子背景');
+    toggle.textContent = enabled ? '深空 · 开' : '深空 · 关';
+    toggle.setAttribute('aria-label', enabled ? '关闭深空动画' : '开启深空动画');
     if (enabled && !document.hidden) frame = requestAnimationFrame(draw);
   }
   toggle.addEventListener('click', () => {

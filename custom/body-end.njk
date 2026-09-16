@@ -1,3 +1,20 @@
 <canvas id="neural-background" aria-hidden="true"></canvas>
-<button id="neural-toggle" type="button" aria-pressed="false" title="切换粒子背景" hidden>粒子背景</button>
+<button id="neural-toggle" type="button" aria-pressed="false" title="切换星空、流星和粒子动画" hidden>深空背景</button>
+<template id="observatory-template">
+  <section class="observatory" aria-label="深空学习站">
+    <div class="observatory-copy">
+      <p class="terminal-label"><span aria-hidden="true">■</span> ABOLEWAER / LEARNING LOG</p>
+      <h1>在知识的宇宙里<br>捕捉一点<span>灵光<span class="cursor-blink" aria-hidden="true">_</span></span></h1>
+      <p class="observatory-intro">把公式推演成直觉，把想法训练成现实。<br>我的深度学习笔记、论文阅读与实验记录。</p>
+      <a class="pixel-link" href="{{ url_for('/archives/') }}">探索笔记 <span aria-hidden="true">↗</span></a>
+      <a class="quiet-link" href="{{ url_for('/posts/math-guide/') }}">公式书写指南 →</a>
+    </div>
+    <div class="observatory-art" aria-hidden="true">
+      <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+      <div class="ghost-sprite"></div>
+      <span class="coordinate">游标幽灵 / ONLINE</span>
+      <span class="pixel-spark spark-one">✦</span><span class="pixel-spark spark-two">+</span>
+    </div>
+  </section>
+</template>
 <script src="{{ url_for('/js/neural-background.js') }}" defer></script>

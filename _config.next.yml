@@ -56,3 +56,4 @@ motion:
 custom_file_path:
   style: source/_data/styles.styl
   bodyEnd: custom/body-end.njk
+  head: custom/head.njk

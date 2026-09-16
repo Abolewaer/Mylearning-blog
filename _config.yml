@@ -17,6 +17,7 @@ category_dir: categories
 skip_render:
   - admin/**
   - images/**
+  - vendor/**
 new_post_name: :title.md
 default_layout: post
 external_link:

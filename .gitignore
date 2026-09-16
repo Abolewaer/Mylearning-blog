@@ -6,3 +6,6 @@ db.json
 *credentials*
 Github.json
 *.log
+
+source/vendor/katex/
+source/admin/math-preview.js

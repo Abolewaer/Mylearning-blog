@@ -35,7 +35,7 @@
             { label: '更新日期', name: 'updated', widget: 'datetime', required: false, format: 'YYYY-MM-DD HH:mm:ss' },
             { label: '分类', name: 'categories', widget: 'select', multiple: true, default: ['学习笔记'], options: ['学习笔记', '论文阅读', '项目实践', '工具与方法'] },
             { label: '标签', name: 'tags', widget: 'list', required: false, hint: '用逗号分隔，例如：Python, 机器学习' },
-            { label: '正文', name: 'body', widget: 'markdown', default: '## 问题与背景\n\n## 学习与实践\n\n## 总结与疑问', modes: ['rich_text', 'raw'], editor_components: ['image', 'code-block'], hint: '默认使用可视化编辑，支持标题、列表、图片和代码。保存到仓库后会触发网站更新。' }
+            { label: '正文', name: 'body', widget: 'markdown', default: '## 问题与背景\n\n## 学习与实践\n\n## 总结与疑问', modes: ['rich_text', 'raw'], editor_components: ['image', 'code-block', 'latex'], hint: '可视化编辑中用 + 插入 LaTeX 公式；行内公式可在源码模式写 $...$，右侧实时预览。保存后自动发布。' }
           ] },
         { name: 'pages', label: '关于我', files: [
           { name: 'about', label: '关于我', file: 'source/about/index.md', fields: [
@@ -45,7 +45,8 @@
         ] }
       ]
     };
-    window.CMS.registerPreviewStyle('body { font-family: system-ui, sans-serif; color: #343b38; background: #faf9f6; font-size: 17px; line-height: 1.95; padding: 24px; } img { max-width: 100%; } pre { overflow: auto; padding: 16px; background: #edf0e9; } h1,h2,h3 { line-height: 1.5; }', { raw: true });
+    window.CMS.registerPreviewStyle('body { font-family: SimHei, Heiti SC, Microsoft YaHei, sans-serif; color: #d0dfd9; background: #0a1014; font-size: 17px; line-height: 1.95; padding: 24px; } img { max-width: 100%; } pre { overflow: auto; padding: 16px; background: #15232b; } h1,h2,h3 { line-height: 1.5; } .katex-display { overflow-x: auto; overflow-y: hidden; padding: 12px 0; } a { color: #8cebb3; } img { max-width:100%; } table { border-collapse:collapse; } td,th { border:1px solid #365047; padding:8px; }', { raw: true });
+    window.registerNotebookMath();
     window.CMS.init({ config });
     document.getElementById('loading').remove();
   } catch (error) { status.textContent = error.message || '后台加载失败，请重试。'; }

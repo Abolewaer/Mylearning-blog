@@ -147,3 +147,174 @@ blockquote, th, td
   #neural-background, #neural-toggle
     display none !important
 
+
+// Pixel observatory: quiet surfaces keep long-form notes readable.
+:root
+  --body-bg-color #090f15
+  --content-bg-color #090f15
+  --brand-color #def5e8
+  --link-color #a6d9be
+  --link-hover-color #9bf5ae
+  --menu-item-bg-color #172a27
+  --btn-default-color #9bf5ae
+  --btn-default-border-color #4a7860
+  --btn-default-hover-bg #9bf5ae
+  --btn-default-hover-color #090f15
+body, button, input, textarea, select
+  font-family "SimHei", "Heiti SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif
+body
+  background #090f15
+  background-image radial-gradient(ellipse at 80% 18%, rgba(31, 74, 63, .15), transparent 45%), radial-gradient(ellipse at 12% 68%, rgba(30, 43, 78, .2), transparent 45%)
+  background-attachment fixed
+.column, .header
+  background #090f15
+.column
+  border-bottom-color #263b36
+.site-title
+  color #def5e8
+  letter-spacing .12em
+.logo-line
+  background #9bf5ae
+.menu-item a, .post-button .btn, #neural-toggle
+  border-radius 0
+.menu-item-active a, .menu-item a:hover, .post-body a
+  color #9bf5ae
+.post-block
+  background rgba(9, 15, 21, .9)
+.post-body .katex
+  font-size 1.12em
+.post-body .katex-display
+  overflow-x auto
+  overflow-y hidden
+  padding 16px 8px
+  margin 1.4em 0
+  border-left 2px solid #4a7860
+  background rgba(21, 37, 43, .6)
+  scrollbar-width thin
+.post-body .katex-display > .katex
+  white-space nowrap
+.post-body eqn
+  display block
+#neural-toggle
+  color #a8ecbb
+  border-color #476657
+  background #101c21
+  box-shadow 3px 3px 0 #04090c
+.observatory
+  display grid
+  grid-template-columns 1.5fr 1fr
+  align-items center
+  gap 24px
+  padding 38px 0 56px
+  margin-bottom 58px
+  border-bottom 1px dashed #30443d
+.observatory .terminal-label
+  color #8eae9f
+  font-size 11px
+  letter-spacing .16em
+  margin 0 0 26px
+.observatory .terminal-label span
+  color #9bf5ae
+  margin-right 8px
+.observatory h1
+  font-size clamp(28px, 3vw, 40px)
+  line-height 1.5
+  letter-spacing .04em
+  margin 0 0 22px
+  color #e0ede7
+.observatory h1 span
+  color #9bf5ae
+.observatory-intro
+  font-size 15px
+  line-height 1.9
+  color #94aca4
+  margin-bottom 30px
+.pixel-link
+  display inline-block
+  padding 9px 17px
+  color #0a1710
+  background #a3eab3
+  border 1px solid #c4ffd2
+  box-shadow 4px 4px 0 #30503c
+  font-size 14px
+.pixel-link:hover
+  color #0a1710
+  background #c4ffd2
+.quiet-link
+  display inline-block
+  margin 16px 0 0 20px
+  color #96b3a4
+  font-size 13px
+  border-bottom 1px dashed #496456
+.observatory-art
+  position relative
+  height 260px
+  display grid
+  place-items center
+  background radial-gradient(ellipse, rgba(93, 188, 128, .08), transparent 66%)
+.ghost-sprite
+  width 192px
+  height 208px
+  background url('../images/cursor-ghost-idle.png') 0 0 / 1536px 208px no-repeat
+  image-rendering pixelated
+  transform scale(1.45)
+  animation ghost-frames 2.4s steps(8) infinite
+.coordinate
+  position absolute
+  bottom 10px
+  color #6e9781
+  font-size 10px
+  letter-spacing .14em
+.orbit
+  position absolute
+  width 220px
+  height 150px
+  border 1px dashed #294838
+  transform rotate(-25deg)
+.orbit-two
+  width 164px
+  height 218px
+  border-color #20343b
+  transform rotate(25deg)
+.pixel-spark
+  position absolute
+  color #b2e8c4
+.spark-one
+  top 18px
+  right 24px
+  font-size 20px
+.spark-two
+  bottom 55px
+  left 15px
+  font-size 18px
+.cursor-blink
+  animation cursor-blink 1.4s steps(2, end) infinite
+@keyframes ghost-frames
+  to
+    background-position -1536px 0
+@keyframes cursor-blink
+  50%
+    opacity 0
+.space-paused .ghost-sprite, .space-paused .cursor-blink
+  animation-play-state paused
+@media (prefers-reduced-motion: reduce)
+  .ghost-sprite, .cursor-blink
+    animation none
+@media (max-width: 767px)
+  .observatory
+    grid-template-columns 1fr
+    padding 12px 4px 32px
+    gap 12px
+    margin-bottom 32px
+  .observatory-art
+    height 210px
+  .ghost-sprite
+    transform scale(1.1)
+  .orbit
+    width 200px
+    height 135px
+  .quiet-link
+    margin-left 16px
+  .observatory h1
+    font-size 30px
+

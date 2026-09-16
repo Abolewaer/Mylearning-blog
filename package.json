@@ -3,24 +3,33 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "hexo clean && hexo generate",
-    "preview": "hexo server --config _config.yml,_config.local.yml --ip 127.0.0.1 --port 4000",
+    "build": "npm run build:assets && hexo clean && hexo generate",
+    "preview": "npm run build:assets && hexo server --config _config.yml,_config.local.yml --ip 127.0.0.1 --port 4000",
     "cms": "node tools/local-cms.cjs",
-    "new": "hexo new"
+    "new": "hexo new",
+    "build:assets": "node tools/build-assets.cjs",
+    "test": "node --test tests/*.test.cjs"
   },
-  "hexo": { "version": "8.1.2" },
+  "hexo": {
+    "version": "8.1.2"
+  },
   "dependencies": {
     "hexo": "8.1.2",
-    "hexo-theme-next": "8.29.0",
-    "hexo-generator-index": "^4.0.0",
     "hexo-generator-archive": "^2.0.0",
     "hexo-generator-category": "^2.0.0",
-    "hexo-generator-tag": "^2.0.0",
+    "hexo-generator-index": "^4.0.0",
     "hexo-generator-searchdb": "^1.5.0",
+    "hexo-generator-tag": "^2.0.0",
     "hexo-renderer-ejs": "^2.0.0",
-    "hexo-renderer-marked": "^7.0.1",
     "hexo-renderer-stylus": "^3.0.1",
-    "hexo-server": "^3.0.0"
+    "hexo-server": "^3.0.0",
+    "hexo-theme-next": "8.29.0",
+    "katex": "^0.18.7",
+    "markdown-it": "^15.0.2",
+    "markdown-it-texmath": "^1.0.0"
   },
-  "devDependencies": { "decap-server": "3.11.2" }
+  "devDependencies": {
+    "decap-server": "3.11.2",
+    "esbuild": "^0.28.2"
+  }
 }
