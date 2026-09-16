@@ -14,6 +14,21 @@ function environment() {
 }
 function request(path, body, extra = {}) { return new Request('https://worker.example'+path, { method:'POST',headers:{Origin:base.SITE_ORIGIN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1',...extra},body:JSON.stringify(body) }); }
 const question = { question: '解释公式', note: { title:'矩阵',body:'$x_i$' } };
+test('publish cleanup preserves empty success without asking Decap to parse JSON', async () => {
+  const env = environment(), token = await ownerSession(env);
+  for (const status of [204, 205]) {
+    const req = new Request('https://worker.example/github/repos/Abolewaer/Mylearning-blog/git/refs/heads/cms%2Fposts%2Ftest', {
+      method: 'DELETE', headers: { Origin: base.SITE_ORIGIN, Authorization: 'Bearer ' + token }
+    });
+    const response = await handleNotebook(req, env, async () => new Response(null, { status, headers: { 'Content-Type': 'application/json' } }));
+    assert.equal(response.status, status);
+    assert.equal(response.headers.get('Content-Type'), null);
+    // Same parser selection used by the pinned Decap GitHub backend.
+    const parsed = response.headers.get('Content-Type')?.match(/json/) ? await response.json() : await response.text();
+    assert.equal(parsed, '');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), base.SITE_ORIGIN);
+  }
+});
 test('assistant receives the admin guide and cannot claim action tools', async () => {
   let system = '';
   const response = await handleNotebook(request('/chat', { question: '怎么删除笔记？' }), environment(), async (_url, options) => {

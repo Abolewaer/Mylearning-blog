@@ -95,7 +95,10 @@ async function proxyWriting(request,env,fetcher) {
     'User-Agent':'learning-notebook-writer','X-GitHub-Api-Version':'2022-11-28'
   },body,signal:AbortSignal.timeout(30000)});
   if(response.status>=300 && response.status<400) return json({message:'写作存储返回了不支持的跳转'},502,origin);
-  const headers=new Headers({'Content-Type':response.headers.get('Content-Type') || 'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':origin,'Vary':'Origin','Access-Control-Expose-Headers':'Link, ETag','X-Content-Type-Options':'nosniff'});
+  const headers=new Headers({'Cache-Control':'no-store','Access-Control-Allow-Origin':origin,'Vary':'Origin','Access-Control-Expose-Headers':'Link, ETag','X-Content-Type-Options':'nosniff'});
+  // Decap chooses its parser by Content-Type. A successful Git ref deletion
+  // returns 204 with no body, which must never be advertised as JSON.
+  if (![204,205].includes(response.status) && response.headers.has('Content-Type')) headers.set('Content-Type',response.headers.get('Content-Type'));
   const link=response.headers.get('Link');if(link)headers.set('Link',link.replaceAll('https://api.github.com',url.origin+'/github'));
   if(response.headers.has('ETag'))headers.set('ETag',response.headers.get('ETag'));
   return new Response(response.body,{status:response.status,headers});
