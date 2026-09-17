@@ -1,7 +1,7 @@
 ---
 title: Isolated update fixture
 ---
-Revision 1
+Revision 2
 
 $x_i$
 
