@@ -1,4 +1,8 @@
 ---
 title: Isolated update fixture
 ---
-Initial published version
+Revision 1
+
+$x_i$
+
+![pixel](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=)
