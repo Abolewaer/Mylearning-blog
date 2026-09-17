@@ -15,8 +15,12 @@
   let stars = [], meteors = [], nextMeteor = 0;
   const pointer = { x: 0, y: 0, active: false };
   const rand = (min, max) => min + Math.random() * (max - min);
-  let held = null;
-  const population = () => document.dispatchEvent(new CustomEvent('star-population', { detail: stars.length + nodes.length + 6 }));
+  let orbit = null, orbitBox = null;
+  function measureOrbit() {
+    orbit = document.querySelector('.stellar-orbits');
+    orbitBox = document.querySelector('.stellar-vessel')?.getBoundingClientRect() || null;
+  }
+  const population = () => document.dispatchEvent(new CustomEvent('star-population', { detail: stars.length + nodes.length }));
 
   function resize() {
     if (nodes.length) {
@@ -35,12 +39,13 @@
       x: rand(0, width), y: rand(0, height), vx: rand(-0.22, 0.22), vy: rand(-0.22, 0.22),
       size: rand(1.1, 2.1), hue: Math.random() > 0.5 ? '92, 173, 255' : '68, 232, 210'
     }));
-    if (!stars.length) stars = Array.from({ length: Math.min(150, Math.ceil(width * height / 6500)) }, () => ({
+    if (!stars.length) stars = Array.from({ length: Math.min(150, Math.ceil(width * height / 6500)) + (home ? 6 : 0) }, () => ({
       x: rand(0, width), y: rand(0, height), size: Math.random() > .9 ? 3 : 2,
       phase: rand(0, Math.PI * 2), alpha: rand(.18, .55)
     }));
     meteors = [];
     population();
+    measureOrbit();
   }
 
   function line(a, b, alpha, color = '73, 188, 220') {
@@ -56,7 +61,6 @@
     frame = 0;
     if (!enabled || document.hidden) return;
     const elapsed = now - last;
-    // Limit mobile devices to 30fps, desktop to ~45fps.
     if (last && elapsed < (coarse.matches ? 33 : 22)) {
       frame = requestAnimationFrame(draw);
       return;
@@ -66,6 +70,14 @@
     ctx.clearRect(0, 0, width, height);
     for (const star of stars) {
       if (star.collected) continue;
+      if (pointer.active) {
+        const dx = pointer.x - star.x, dy = pointer.y - star.y;
+        if (dx * dx + dy * dy < 190 * 190) {
+          const pull = Math.min(.035 * dt, 1);
+          star.x += dx * pull; star.y += dy * pull;
+        }
+      }
+      if (absorb(star)) continue;
       ctx.fillStyle = `rgba(174, 216, 205, ${star.alpha * (.75 + .25 * Math.sin(now / 1800 + star.phase))})`;
       ctx.fillRect(Math.round(star.x / 2) * 2, Math.round(star.y / 2) * 2, star.size, star.size);
     }
@@ -83,17 +95,14 @@
       }
     }
     for (const node of nodes) {
-      if (node.collected || held?.star === node) continue;
+      if (node.collected) continue;
       if (pointer.active) {
         const dx = pointer.x - node.x, dy = pointer.y - node.y;
         const distance = Math.hypot(dx, dy);
-        if (distance < 190 && distance > 30) {
+        if (distance < 190 && distance > 2) {
           const pull = (1 - distance / 190) * 0.03 * dt;
           node.vx += dx * pull / distance;
           node.vy += dy * pull / distance;
-        } else if (distance < 30 && distance > 0.1) {
-          node.vx -= dx / distance * 0.012 * dt;
-          node.vy -= dy / distance * 0.012 * dt;
         }
       }
       const speed = Math.hypot(node.vx, node.vy);
@@ -107,11 +116,12 @@
     }
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if (node.collected) continue;
+      if (node.collected || absorb(node)) continue;
       for (let j = i + 1; j < nodes.length; j++) {
         if (nodes[j].collected) continue;
-        const distance = Math.hypot(node.x - nodes[j].x, node.y - nodes[j].y);
-        if (distance < 125) line(node, nodes[j], (1 - distance / 125) * 0.13);
+        const dx = node.x - nodes[j].x, dy = node.y - nodes[j].y;
+        const squared = dx * dx + dy * dy;
+        if (squared < 15625) line(node, nodes[j], (1 - Math.sqrt(squared) / 125) * 0.13);
       }
       const distance = pointer.active ? Math.hypot(node.x - pointer.x, node.y - pointer.y) : Infinity;
       if (distance < 190) line(node, pointer, (1 - distance / 190) * 0.6, node.hue);
@@ -138,37 +148,19 @@
   window.addEventListener('blur', () => { pointer.active = false; });
   document.addEventListener('visibilitychange', sync);
   document.addEventListener('star-population-request', population);
-  document.addEventListener('star-pick', () => {
-    const star = [...stars, ...nodes].find(p => !p.collected && p !== held?.star);
-    if (star) { star.collected = true; document.dispatchEvent(new Event('star-captured')); }
-  });
-  document.addEventListener('star-reset', () => { held = null; nodes = []; stars = []; resize(); });
-  document.addEventListener('pointerdown', event => {
-    const game = document.querySelector('.stellar-orbits');
-    if (!game || game.classList.contains('is-gathering') || game.classList.contains('is-blooming') || !enabled || event.button !== 0) return;
-    if (event.target.closest('a,button,input,textarea,article,.post-block,header,nav,#notebook-assistant')) return;
-    const star = [...nodes, ...stars].filter(p => !p.collected).sort((a,b) => Math.hypot(a.x-event.clientX,a.y-event.clientY)-Math.hypot(b.x-event.clientX,b.y-event.clientY))[0];
-    if (!star || Math.hypot(star.x-event.clientX,star.y-event.clientY)>18) return;
-    held = { star, x: star.x, y: star.y, id: event.pointerId };
-    event.preventDefault();
-  });
-  document.addEventListener('pointermove', event => {
-    if (!held || held.id !== event.pointerId) return;
-    held.star.x = event.clientX; held.star.y = event.clientY;
-  });
-  function release(event, cancel = false) {
-    if (!held) return;
-    const vessel = document.querySelector('.stellar-vessel');
-    const r = vessel?.getBoundingClientRect();
-    if (!cancel && r && event.clientX >= r.left-12 && event.clientX <= r.right+12 && event.clientY >= r.top-12 && event.clientY <= r.bottom+12) {
-      held.star.collected = true;
-      document.dispatchEvent(new Event('star-captured'));
-    } else { held.star.x = held.x; held.star.y = held.y; }
-    held = null;
+  document.addEventListener('star-reset', () => { nodes = []; stars = []; resize(); });
+  document.addEventListener('star-orbit-ready', measureOrbit);
+  window.addEventListener('scroll', measureOrbit, { passive: true });
+  function absorb(star) {
+    if (!pointer.active || !orbitBox || !orbit || orbit.classList.contains('is-gathering') || orbit.classList.contains('is-blooming')) return false;
+    const cx = orbitBox.left + orbitBox.width / 2, cy = orbitBox.top + orbitBox.height / 2;
+    const nearPointer = (pointer.x-cx)**2 + (pointer.y-cy)**2 < 180**2;
+    const inside = (star.x-cx)**2 + (star.y-cy)**2 < (orbitBox.width / 2)**2;
+    if (!nearPointer || !inside) return false;
+    star.collected = true;
+    document.dispatchEvent(new Event('star-captured'));
+    return true;
   }
-  document.addEventListener('pointerup', release);
-  document.addEventListener('pointercancel', event => release(event, true));
-  window.addEventListener('blur', event => release(event, true));
   window.addEventListener('resize', resize, { passive: true });
   reduced.addEventListener('change', () => { enabled = !reduced.matches; sync(); });
   coarse.addEventListener('change', resize);

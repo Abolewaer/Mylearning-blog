@@ -547,3 +547,22 @@ body
     animation none
   .is-gathering .stellar-lights
     transition none
+
+// Orbit a group per lane rather than promoting every satellite to an animation.
+.stellar-lane
+  position absolute
+  inset 0
+  animation stellar-lane-spin var(--period) linear infinite
+.stellar-lights i
+  animation none
+.orbits-paused .stellar-lane, .orbits-paused .stellar-burst i
+  animation-play-state paused
+@keyframes stellar-lane-spin
+  to
+    transform rotate(360deg)
+@media (prefers-reduced-motion: reduce)
+  .stellar-lane
+    animation none
+
+.stellar-vessel
+  cursor default
