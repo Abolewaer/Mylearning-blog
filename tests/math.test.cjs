@@ -12,6 +12,16 @@ $$`);
   assert.match(html, /katex-display/);
   assert.doesNotMatch(html, /katex-error/);
 });
+test('pasted parenthesized TeX renders, including escaped underscore', () => {
+  for (const tex of [String.raw`(\varepsilon_t)`, String.raw`(\varepsilon\_t)`, String.raw`\(\varepsilon_t\)`]) {
+    const html = md.render('噪声项 ' + tex + '。');
+    assert.match(html, /class="katex"/);
+    assert.doesNotMatch(html, /katex-error/);
+    assert.match(html, /<msub>/);
+  }
+  assert.doesNotMatch(md.render('普通括号 (example) 和函数 (x + 1)。'), /class="katex"/);
+  assert.doesNotMatch(md.render('`(\\varepsilon_t)`'), /class="katex"/);
+});
 test('matrix rows, aligned derivation and cases survive unchanged', () => {
   for (const tex of [String.raw`\begin{bmatrix}a&b\\c&d\end{bmatrix}`,
     String.raw`\begin{aligned}x&=y\\y&=z\end{aligned}`,
