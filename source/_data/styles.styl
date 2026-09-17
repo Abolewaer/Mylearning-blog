@@ -202,7 +202,7 @@ body
   box-shadow 3px 3px 0 #04090c
 .observatory
   display grid
-  grid-template-columns minmax(0, 1.1fr) minmax(280px, .9fr)
+  grid-template-columns minmax(0, 1fr)
   align-items center
   gap clamp(20px, 3vw, 42px)
   padding 12px 0 28px
@@ -210,55 +210,6 @@ body
   border-bottom 1px dashed #30443d
 .observatory-copy
   min-width 0
-.observatory-map
-  margin 0
-  position relative
-  min-width 0
-  color #8daa9d
-  border 1px solid rgba(86, 126, 106, .2)
-  background radial-gradient(ellipse at 52% 49%, rgba(42, 90, 76, .1), transparent 63%), rgba(10, 20, 25, .24)
-  box-shadow inset 0 0 0 6px rgba(17, 32, 33, .2)
-  clip-path polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 11px 100%, 0 calc(100% - 11px))
-.observatory-map:before, .observatory-map:after
-  content ''
-  position absolute
-  width 4px
-  height 4px
-  background #8bb69f
-  opacity .72
-.observatory-map:before
-  top 10px
-  left 10px
-.observatory-map:after
-  bottom 10px
-  right 10px
-.observatory-map svg
-  display block
-  width 100%
-  height auto
-.observatory-map figcaption
-  display flex
-  justify-content space-between
-  gap 12px
-  padding 0 20px 18px
-  font 10px/1.5 monospace
-  letter-spacing .09em
-  color #719b88
-.observatory-map .map-idle, .observatory-map .map-discovery
-  text-align right
-.observatory-map .map-discovery
-  display none
-  color #b5ecc7
-.observatory-map:hover .map-idle
-  display none
-.observatory-map:hover .map-discovery
-  display inline
-.observatory-map:hover .map-core
-  filter drop-shadow(0 0 8px rgba(166, 244, 197, .65))
-.observatory-map .map-signals rect
-  transition fill .4s ease
-.observatory-map:hover .map-signals rect
-  fill #b1efc6
 .observatory .terminal-label
   color #8eae9f
   font-size 11px
@@ -291,6 +242,34 @@ body
 .pixel-link:hover
   color #0a1710
   background #c4ffd2
+.pixel-link span
+  display inline-block
+  transition transform .2s ease
+.pixel-link:hover span, .pixel-link:focus-visible span
+  transform translate(2px, -2px)
+.pixel-link:active
+  transform translate(2px, 2px)
+  box-shadow 2px 2px 0 #30503c
+.pixel-link:focus-visible, .quiet-link:focus-visible, .post-button .btn:focus-visible
+  outline 1px solid #a3eab3
+  outline-offset 5px
+// A short travelling line quietly reinforces the full-article action.
+.post-button .btn
+  position relative
+  overflow hidden
+.post-button .btn:after
+  content ''
+  position absolute
+  bottom 0
+  left 0
+  width 100%
+  height 1px
+  background currentColor
+  transform scaleX(0)
+  transform-origin left
+  transition transform .24s ease
+.post-button .btn:hover:after, .post-button .btn:focus-visible:after
+  transform scaleX(1)
 .quiet-link
   display inline-block
   margin 16px 0 0 20px
@@ -351,36 +330,14 @@ body
 @media (prefers-reduced-motion: reduce)
   .ghost-sprite, .cursor-blink
     animation none
-  .observatory-map .map-signals rect
+  .pixel-link span, .post-button .btn:after
     transition none
-@media (max-width: 850px)
-  .observatory
-    grid-template-columns minmax(0, 1fr)
-  .observatory-map
-    max-width 490px
-    width 100%
-    justify-self center
 @media (max-width: 767px)
   .observatory
     grid-template-columns 1fr
     padding 8px 4px 20px
     gap 12px
     margin-bottom 24px
-  .observatory-map
-    max-width 390px
-    height 156px
-    overflow hidden
-  .observatory-map svg
-    height 188px
-    transform translateY(-18px)
-  .observatory-map figcaption
-    position absolute
-    left 0
-    right 0
-    bottom 0
-    padding 9px 12px 8px
-    background linear-gradient(transparent, rgba(9, 18, 21, .92) 32%)
-    font-size 9px
   .observatory-art
     height 210px
   .ghost-sprite

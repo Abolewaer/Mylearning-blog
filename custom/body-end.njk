@@ -8,40 +8,6 @@
       <a class="pixel-link" href="{{ url_for('/archives/') }}">探索笔记 <span aria-hidden="true">↗</span></a>
       <a class="quiet-link" href="{{ url_for('/posts/math-guide/') }}">公式书写指南 →</a>
     </div>
-    <figure class="observatory-map" aria-label="由星点与轨道组成的深空信号图">
-      <svg viewBox="0 0 420 322" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="map-halo"><stop stop-color="#71c6ad" stop-opacity=".09"/><stop offset="1" stop-color="#71c6ad" stop-opacity="0"/></radialGradient>
-          <linearGradient id="map-beam" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#648f8a" stop-opacity=".15"/><stop offset=".55" stop-color="#a8eac2" stop-opacity=".9"/><stop offset="1" stop-color="#648f8a" stop-opacity=".15"/></linearGradient>
-        </defs>
-        <circle cx="218" cy="154" r="147" fill="url(#map-halo)"/>
-        <g fill="none" stroke="#48695f" stroke-width="1" opacity=".55">
-          <ellipse cx="218" cy="155" rx="151" ry="60" transform="rotate(-28 218 155)" stroke-dasharray="2 7"/>
-          <ellipse cx="218" cy="155" rx="111" ry="44" transform="rotate(48 218 155)" stroke-dasharray="1 8"/>
-          <circle cx="218" cy="155" r="79" stroke-opacity=".6"/>
-          <circle cx="218" cy="155" r="42" stroke-opacity=".35"/>
-          <path d="M32 232h32m-16-16v32M349 46h32m-16-16v32M218 21v20M218 269v20" stroke-opacity=".45"/>
-        </g>
-        <g fill="none" stroke="url(#map-beam)" stroke-width="1.2" stroke-linecap="square">
-          <path d="M60 203 111 151 163 194 218 155 270 120 330 138 376 82"/>
-          <path d="M111 151 142 88 218 155 278 219 330 138" opacity=".56"/>
-          <path d="M163 194 199 246 278 219" opacity=".4"/>
-        </g>
-        <g class="map-signals" fill="#92c7b1">
-          <rect x="57" y="200" width="6" height="6"/><rect x="108" y="148" width="6" height="6"/>
-          <rect x="139" y="85" width="6" height="6"/><rect x="160" y="191" width="6" height="6"/>
-          <rect x="215" y="152" width="7" height="7"/><rect x="267" y="117" width="6" height="6"/>
-          <rect x="275" y="216" width="6" height="6"/><rect x="327" y="135" width="6" height="6"/>
-          <rect x="373" y="79" width="6" height="6"/><rect x="196" y="243" width="6" height="6"/>
-        </g>
-        <g class="map-core"><rect x="211" y="148" width="14" height="14" fill="none" stroke="#b7f1ca"/><rect x="216" y="153" width="4" height="4" fill="#d4ffe3"/></g>
-        <g fill="#77988d" font-size="9" font-family="monospace" letter-spacing="1.4">
-          <text x="35" y="176">INPUT</text><text x="231" y="147">LATENT</text><text x="310" y="237">INFERENCE</text>
-          <text x="21" y="298">00 : 0A</text><text x="311" y="28">47°  /  09°</text>
-        </g>
-      </svg>
-      <figcaption><span>FIG. 01 / SIGNAL MAP</span><span class="map-idle">将微弱信号连成路径</span><span class="map-discovery">SIGNAL ACQUIRED · 已捕捉</span></figcaption>
-    </figure>
   </section>
 </template>
 <script src="{{ url_for('/js/neural-background.js') }}" defer></script>
