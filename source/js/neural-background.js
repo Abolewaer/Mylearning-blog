@@ -20,6 +20,7 @@
   let pool = [];
   const physics = window.StellarPhysics;
   const GRAVITY_RADIUS = 140;
+  const TARGET = physics?.threshold || 188;
   const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, 24);
   glow.addColorStop(0, 'rgba(210, 239, 216, .45)');
   glow.addColorStop(.22, 'rgba(161, 216, 180, .15)');
@@ -53,7 +54,7 @@
       x: rand(0, width), y: rand(0, height), vx: rand(-0.22, 0.22), vy: rand(-0.22, 0.22),
       size: rand(1.1, 2.1), hue: Math.random() > 0.5 ? '92, 173, 255' : '68, 232, 210'
     }));
-    if (!stars.length) stars = Array.from({ length: Math.min(150, Math.ceil(width * height / 6500)) + (home ? 6 : 0) }, () => ({
+    if (!stars.length) stars = Array.from({ length: Math.max(home ? TARGET - nodes.length : 0, Math.min(150, Math.ceil(width * height / 6500)) + (home ? 6 : 0)) }, () => ({
       x: rand(0, width), y: rand(0, height), size: Math.random() > .9 ? 3 : 2,
       phase: rand(0, Math.PI * 2), alpha: rand(.18, .55)
     }));
@@ -83,7 +84,7 @@
     const dt = Math.min(elapsed / 16.67 || 1, 2.5);
     last = now;
     const seconds = Math.min(elapsed / 1000 || 1 / 60, .05);
-    if (orbitBox && orbitBox.bottom > 0 && orbitBox.top < height) {
+    if (phase === 'burst' || (orbitBox && orbitBox.bottom > 0 && orbitBox.top < height)) {
       phaseAge += seconds;
       advancePhase();
     }
@@ -91,6 +92,13 @@
     drawSun();
     for (const star of stars) {
       const guided = updateOrbit(star, seconds);
+      if (!guided && star.vx != null) {
+        star.x += star.vx * dt; star.y += star.vy * dt;
+        if (star.x < 0 || star.x > width) star.vx *= -1;
+        if (star.y < 0 || star.y > height) star.vy *= -1;
+        star.x = Math.max(0, Math.min(width, star.x));
+        star.y = Math.max(0, Math.min(height, star.y));
+      }
       if (!guided && pointer.active) {
         const dx = pointer.x - star.x, dy = pointer.y - star.y;
         if (dx * dx + dy * dy < 190 * 190) {
@@ -137,14 +145,14 @@
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
 
-      for (let j = i + 1; !node.orbit && j < nodes.length; j++) {
-        if (nodes[j].orbit) continue;
+      for (let j = i + 1; !node.orbit && !node.ejected && j < nodes.length; j++) {
+        if (nodes[j].orbit || nodes[j].ejected) continue;
         const dx = node.x - nodes[j].x, dy = node.y - nodes[j].y;
         const squared = dx * dx + dy * dy;
         if (squared < 15625) line(node, nodes[j], (1 - Math.sqrt(squared) / 125) * 0.13);
       }
       const distance = pointer.active ? Math.hypot(node.x - pointer.x, node.y - pointer.y) : Infinity;
-      if (!node.orbit && distance < 190) line(node, pointer, (1 - distance / 190) * 0.6, node.hue);
+      if (!node.orbit && !node.ejected && distance < 190) line(node, pointer, (1 - distance / 190) * 0.6, node.hue);
       ctx.fillStyle = `rgba(${node.hue}, ${distance < 190 ? 0.72 : 0.40})`;
       const pixelSize = distance < 190 ? 3 : 2;
       ctx.fillRect(Math.round(node.x), Math.round(node.y), pixelSize, pixelSize);
@@ -171,9 +179,15 @@
   document.addEventListener('star-orbit-ready', measureOrbit);
   window.addEventListener('scroll', measureOrbit, { passive: true });
   function updateOrbit(p, seconds) {
+    if (p.ejected) {
+      const old = { x: p.x, y: p.y };
+      physics.coast(p, seconds, width, height);
+      line(old, p, Math.max(0, .6-phaseAge*.17), '174, 216, 193');
+      return true;
+    }
     if (!physics || !orbitBox || orbitBox.bottom <= 0 || orbitBox.top >= height) return !!p.orbit;
     const cx = orbitBox.left + orbitBox.width / 2, cy = orbitBox.top + orbitBox.height / 2;
-    if (!p.orbit && phase === 'orbit' && claimed < Math.ceil(pool.length / 2) && pointer.active &&
+    if (!p.orbit && phase === 'orbit' && claimed < TARGET && pointer.active &&
         (pointer.x-cx)**2 + (pointer.y-cy)**2 < 220**2 && (p.x-cx)**2 + (p.y-cy)**2 < GRAVITY_RADIUS**2) {
       // Preserve position and initial velocity; no remove/recreate or phase jump.
       p.orbit = true; p.radius = 18 + (claimed++ % 8) * 8;
@@ -182,18 +196,14 @@
     if (!p.orbit) return false;
     const old = { x: p.x, y: p.y };
     p.age += seconds;
-    if (phase === 'burst') {
-      p.x += p.ox * seconds; p.y += p.oy * seconds;
-      const drag = Math.exp(-1.1 * seconds);
-      p.ox *= drag; p.oy *= drag;
-    } else {
+    {
       const radius = phase === 'collapse' ? Math.max(1, p.radius * (1 - Math.min(phaseAge / 1.5, 1))**2) : p.radius;
       physics.step(p, cx, cy, radius, seconds);
       if (!p.counted && phase === 'orbit' && p.age > .4 && Math.abs(Math.hypot(p.x-cx,p.y-cy)-p.radius)<8) {
         p.counted = true;
         collected++;
         document.dispatchEvent(new CustomEvent('stellar-progress', {detail:collected}));
-        if (collected >= Math.ceil(pool.length / 2)) { phase = 'collapse'; phaseAge = 0; }
+        if (collected >= TARGET) { phase = 'collapse'; phaseAge = 0; }
       }
     }
     line(old, p, phase === 'burst' ? Math.max(0, .6-phaseAge*.17) : .4, '174, 216, 193');
@@ -204,14 +214,16 @@
       phase = 'burst'; phaseAge = 0;
       const cx = orbitBox.left + orbitBox.width / 2, cy = orbitBox.top + orbitBox.height / 2;
       for (const p of pool) if (p.orbit) {
-        const angle = Math.atan2(p.y-cy,p.x-cx);
-        const speed = rand(65, 155);
-        p.ox = Math.cos(angle)*speed; p.oy = Math.sin(angle)*speed;
+        physics.eject(p, cx, cy, width, height, rand(.3, .94));
       }
       document.dispatchEvent(new CustomEvent('stellar-message', {detail:'放松结束，现在是学习时间'}));
     } else if (phase === 'burst' && phaseAge >= 3.8) {
       phase = 'orbit'; phaseAge = 0; collected = 0; claimed = 0;
-      nodes = []; stars = []; resize();
+      for (const p of pool) if (p.ejected) {
+        p.ejected = false;
+        p.vx = p.ox / 60; p.vy = p.oy / 60;
+      }
+      document.dispatchEvent(new CustomEvent('stellar-progress', {detail:0}));
     } else if (phase === 'orbit' && phaseAge > 4 && collected === 0) {
       if (phaseAge < 4.1) document.dispatchEvent(new CustomEvent('stellar-message', {detail:''}));
     }

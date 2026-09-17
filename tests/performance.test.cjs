@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
-function background(low = false, interactive = false, centerX = 2000) {
+function background(low = false, interactive = false, centerX = 2000, viewport = [4000,2200]) {
   const handlers = {}, frames = new Map(), populations = [];
   let id = 0;
   const classes = new Set();
@@ -11,7 +11,8 @@ function background(low = false, interactive = false, centerX = 2000) {
   ctx.createRadialGradient = () => ({addColorStop(){}});
   const orbitClasses = new Set();
   const orbit = {classList:{contains:k=>orbitClasses.has(k)}};
-  let captured = 0;
+  let captured = 0, peakCaptured = 0;
+  const tracked = new Set();
   const canvas = { getContext: () => ctx };
   const document = {
     hidden: false,
@@ -19,18 +20,19 @@ function background(low = false, interactive = false, centerX = 2000) {
     getElementById: id => id === 'neural-background' ? canvas : null,
     documentElement: { classList: { toggle(k,on) { on ? classes.add(k) : classes.delete(k); } } },
     addEventListener(k,fn) { (handlers[k] ||= []).push(fn); },
-    dispatchEvent(e) { if(e.type === 'star-population') populations.push(e.detail); if(e.type === 'stellar-progress') captured=e.detail; for(const f of handlers[e.type] || []) f(e); }
+    dispatchEvent(e) { if(e.type === 'star-population') populations.push(e.detail); if(e.type === 'stellar-progress') { captured=e.detail; peakCaptured=Math.max(peakCaptured,captured); } for(const f of handlers[e.type] || []) f(e); }
   };
   const env = { document, navigator: {hardwareConcurrency:low ? 2 : 8,deviceMemory:low ? 2 : 8},
-    innerWidth:4000,innerHeight:2200,devicePixelRatio:3,
+    innerWidth:viewport[0],innerHeight:viewport[1],devicePixelRatio:3,
     matchMedia:()=>({matches:false,addEventListener(){}}),performance:{now:()=>0},
     requestAnimationFrame(fn) { frames.set(++id,fn); return id; },cancelAnimationFrame(i){frames.delete(i);},
     CustomEvent:class { constructor(type,init){this.type=type;this.detail=init.detail;} },Event:class {constructor(type){this.type=type;}}
   };
   if (interactive) { env.Math=Object.create(Math); env.Math.random=()=>.5; }
-  env.window={StellarPhysics:require('../source/js/stellar-physics.js'),addEventListener:document.addEventListener.bind(document)};
+  const physics=require('../source/js/stellar-physics.js');
+  env.window={StellarPhysics:{...physics,step(p,...args){tracked.add(p);return physics.step(p,...args);}},addEventListener:document.addEventListener.bind(document)};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../source/js/neural-background.js'),'utf8'),env);
-  return {canvas,populations,classes,document,frames,get captured(){return captured;}, tick(t) {const f=[...frames.values()];frames.clear();for(const cb of f)cb(t);} };
+  return {canvas,populations,classes,document,frames,get captured(){return captured;},get peakCaptured(){return peakCaptured;},tracked, tick(t) {const f=[...frames.values()];frames.clear();for(const cb of f)cb(t);} };
 }
 test('particle count and resolution stay unchanged on all desktop hardware',()=>{
   for(const low of [false,true]) {
@@ -73,7 +75,7 @@ test('assistant runtime is requested only on click and failed loads can retry',(
   click();children[1].onload();assert.equal(requested,1);
 });
 
-test('hovering alone guides stars into orbit, stops at half, and cannot click-add',()=>{
+test('hovering alone guides stars into orbit, stops at 188, and cannot click-add',()=>{
   const b=background(false,true);
   b.tick(30);
   assert.equal(b.captured,0);
@@ -82,9 +84,20 @@ test('hovering alone guides stars into orbit, stops at half, and cannot click-ad
   b.document.dispatchEvent({type:'pointermove',pointerType:'mouse',clientX:2000,clientY:1100});
   b.tick(60);
   assert.equal(b.captured,0); // No teleport or instant capture.
-  for(let t=90;t<12000;t+=30) b.tick(t);
-  assert.equal(b.captured,128);
-  assert.ok(b.populations.length>1); // Burst completes and a fresh round appears.
+  for(let t=90;t<12000;t+=30) {
+    b.tick(t);
+    if(b.peakCaptured===188) b.document.dispatchEvent({type:'pointerout',relatedTarget:null});
+  }
+  assert.equal(b.peakCaptured,188);
+  assert.equal(b.captured,0);
+  assert.equal(b.populations.length,1); // No regeneration or canvas resize after the burst.
+  assert.equal(b.tracked.size,188);
+  for(const p of b.tracked) {
+    assert.equal(p.orbit,false);
+    assert.equal(p.ejected,false);
+    assert.ok(Math.hypot(p.x-2000,p.y-1100)>100);
+    assert.ok(p.x>=0 && p.x<=4000 && p.y>=0 && p.y<=2200);
+  }
 });
 
 test('the star does not capture particles outside the fixed local radius',()=>{
@@ -112,3 +125,23 @@ test('orbital integration preserves position continuity and converges at differe
 });
 
 
+
+test('ejection preserves identity/position and spreads existing particles across the viewport',()=>{
+  const {eject,coast}=require('../source/js/stellar-physics.js');
+  for(const hz of [20,30,45,60]) for(let i=0;i<8;i++) {
+    const a=i*Math.PI/4, p={x:600+Math.cos(a)*4,y:350+Math.sin(a)*4,orbit:true};
+    const x=p.x,y=p.y;
+    eject(p,600,350,1200,700,.8);
+    assert.equal(p.x,x);assert.equal(p.y,y);
+    assert.equal(p.orbit,false);
+    for(let t=0;t<hz*3.8;t++) coast(p,1/hz,1200,700);
+    assert.ok(Math.hypot(p.x-600,p.y-350)>275);
+    assert.ok(p.x>=0 && p.x<=1200 && p.y>=0 && p.y<=700);
+    assert.ok(Math.hypot(p.ox,p.oy)<4);
+  }
+});
+
+test('small viewports contain enough existing stars to reach the fixed 188 target',()=>{
+  const b=background(true,false,2000,[390,844]);
+  assert.ok(b.populations.at(-1)>=188);
+});

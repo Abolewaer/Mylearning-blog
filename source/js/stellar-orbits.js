@@ -11,15 +11,16 @@
     <p class="stellar-message" role="status" aria-live="polite"></p>`;
   home.append(game);
   let total = 0;
+  const target = window.StellarPhysics?.threshold || 188;
   const count = game.querySelector('.stellar-count');
   const message = game.querySelector('.stellar-message');
   document.addEventListener('star-population', event => {
     total = event.detail;
-    count.textContent = `0 / ${Math.ceil(total / 2)}`;
-    game.title = `共 ${total} 颗星辰，一半进入轨道后绽放`;
+    count.textContent = `0 / ${target}`;
+    game.title = `共 ${total} 颗星辰，${target} 颗进入轨道后绽放`;
   });
   document.addEventListener('stellar-progress', event => {
-    count.textContent = `${event.detail} / ${Math.ceil(total / 2)}`;
+    count.textContent = `${event.detail} / ${target}`;
   });
   document.addEventListener('stellar-message', event => { message.textContent = event.detail; });
   document.dispatchEvent(new Event('star-population-request'));
