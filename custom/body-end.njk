@@ -11,5 +11,6 @@
   </section>
 </template>
 <script src="{{ url_for('/js/neural-background.js') }}" defer></script>
+<script src="{{ url_for('/js/stellar-orbits.js') }}" defer></script>
 <div id="notebook-assistant" data-config="{{ url_for('/assistant/settings.json') }}" data-admin="{{ url_for('/admin/') }}"{% if is_post() %} data-context="{{ url_for(page.path) }}context.json"{% endif %}></div>
 <script src="{{ url_for('/js/notebook-assistant.js') }}" defer></script>

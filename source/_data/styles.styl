@@ -351,3 +351,199 @@ body
     font-size 30px
 
 
+
+// A quiet, playable detail in the homepage margin.
+.observatory
+  position relative
+.stellar-orbits
+  position absolute
+  right 0
+  bottom 32px
+  width 250px
+  height 185px
+  color #8ca89c
+  font-size 11px
+  z-index 2
+.stellar-sky
+  position absolute
+  inset 0
+.stellar-star
+  position absolute
+  width 28px
+  height 28px
+  padding 0
+  border 0
+  background transparent
+  color #a2c3b0
+  cursor grab
+  touch-action none
+  user-select none
+  font-size 15px
+  transition color .2s
+.stellar-star:hover, .stellar-star:focus-visible
+  color #e3ffe7
+  text-shadow 0 0 9px #a3eab3
+.stellar-star:focus-visible
+  outline 1px dotted #a3eab3
+.stellar-star.is-dragging
+  cursor grabbing
+  z-index 5
+.stellar-star.is-collected
+  visibility hidden
+.stellar-vessel
+  position absolute
+  width 54px
+  height 76px
+  left 124px
+  top 54px
+  color #6d9080
+  transition color .25s, filter .25s
+  cursor pointer
+.stellar-vessel svg
+  width 100%
+  height 100%
+  fill rgba(117, 169, 144, .025)
+  stroke currentColor
+  stroke-width 1
+.stellar-vessel.is-near, .stellar-orbits:focus-within .stellar-vessel, .stellar-vessel:hover
+  color #bfedce
+  filter drop-shadow(0 0 5px #639276)
+.stellar-lights i
+  position absolute
+  width 2px
+  height 2px
+  background #c0edce
+  box-shadow 0 0 5px #85c79d
+.stellar-caption
+  position absolute
+  bottom 30px
+  width 100%
+  text-align center
+  letter-spacing .12em
+.stellar-count
+  margin-left 8px
+  opacity .7
+.stellar-hint
+  position absolute
+  bottom 8px
+  width 100%
+  text-align center
+  margin 0
+  font-size 10px
+  opacity 0
+  transition opacity .3s
+.stellar-orbits:hover .stellar-hint, .stellar-orbits:focus-within .stellar-hint
+  opacity .8
+.stellar-message
+  position absolute
+  bottom -15px
+  width 100%
+  text-align center
+  margin 0
+  font-size 11px
+  color #bed9c8
+.stellar-burst
+  position absolute
+  left 151px
+  top 95px
+  pointer-events none
+.stellar-burst i
+  position absolute
+  width 2px
+  height 2px
+  background #d4eddf
+  box-shadow 0 0 6px #8dc3aa
+  animation stellar-bloom 2.2s ease-out both
+  animation-delay var(--delay)
+.is-gathering .stellar-vessel
+  animation stellar-gather .65s ease-in both
+@keyframes stellar-gather
+  to
+    filter drop-shadow(0 0 9px #a3eab3)
+    transform scale(.9)
+@keyframes stellar-bloom
+  0%
+    opacity 0
+    transform translate(0, 0)
+  12%
+    opacity .9
+  100%
+    opacity 0
+    transform translate(var(--dx), var(--dy))
+@media (max-width: 1000px)
+  .stellar-orbits
+    position relative
+    right auto
+    bottom auto
+    justify-self end
+    margin-top -12px
+@media (prefers-reduced-motion: reduce)
+  .stellar-burst i, .is-gathering .stellar-vessel
+    animation none
+  .stellar-burst
+    display none
+  .stellar-vessel, .stellar-hint, .stellar-star
+    transition none
+@media (pointer: coarse)
+  .stellar-hint
+    opacity .8
+
+// Eight faint orbital paths around a small star.
+.stellar-orbits
+  height 210px
+.stellar-vessel
+  width 160px
+  height 160px
+  left 65px
+  top 8px
+  color rgba(139, 174, 157, .14)
+.stellar-vessel svg
+  fill none
+  stroke-width .6
+.stellar-vessel.is-near, .stellar-orbits:focus-within .stellar-vessel, .stellar-vessel:hover
+  color rgba(165, 210, 185, .32)
+  filter none
+.stellar-core
+  position absolute
+  left 76px
+  top 76px
+  width 8px
+  height 8px
+  border-radius 50%
+  background #d2e9d5
+  box-shadow 0 0 9px 2px rgba(172, 219, 181, .3), 0 0 22px rgba(161, 208, 178, .16)
+.stellar-lights
+  position absolute
+  inset 0
+.stellar-lights i
+  left 79px
+  top 79px
+  border-radius 50%
+  animation stellar-orbit var(--period) linear infinite
+  transform rotate(var(--angle)) translateX(var(--radius))
+.stellar-burst
+  left 145px
+  top 88px
+.stellar-vessel:focus-visible
+  outline 1px dotted #83a58f
+  outline-offset 3px
+  border-radius 50%
+.is-gathering .stellar-vessel
+  animation none
+.is-gathering .stellar-lights
+  transform scale(.03)
+  transition transform .65s ease-in
+.is-gathering .stellar-core
+  box-shadow 0 0 16px 4px rgba(172, 219, 181, .55)
+.is-blooming .stellar-core
+  opacity .35
+@keyframes stellar-orbit
+  from
+    transform rotate(var(--angle)) translateX(var(--radius))
+  to
+    transform rotate(calc(var(--angle) + 360deg)) translateX(var(--radius))
+@media (prefers-reduced-motion: reduce)
+  .stellar-lights i
+    animation none
+  .is-gathering .stellar-lights
+    transition none
