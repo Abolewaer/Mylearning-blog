@@ -6,6 +6,17 @@
     queued = false;
     const root = document.getElementById('nc-root');
     if (!root) return;
+    // Drafts already appear in the article collection, so the separate
+    // review board adds states this single-author site does not use.
+    for (const link of root.querySelectorAll('a[href="#/workflow"]')) link.closest('li')?.classList.add('notebook-review-navigation');
+    if (location.hash === '#/workflow') {
+      location.replace('#/collections/posts');
+      return;
+    }
+    for (const badge of root.querySelectorAll('[class*="WorkflowBadge"]')) {
+      badge.classList.add('notebook-draft-badge');
+      badge.setAttribute('aria-label', '草稿');
+    }
     const editing = !!root.querySelector('label[for^="body-field-"]');
     if (!editing) return;
     for (const button of root.querySelectorAll('button')) {
