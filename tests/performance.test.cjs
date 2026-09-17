@@ -3,22 +3,23 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
-function background(low = false, interactive = false) {
+function background(low = false, interactive = false, centerX = 2000) {
   const handlers = {}, frames = new Map(), populations = [];
   let id = 0;
   const classes = new Set();
-  const ctx = Object.fromEntries(['setTransform','clearRect','fillRect','beginPath','moveTo','lineTo','stroke'].map(k => [k,()=>{}]));
+  const ctx = Object.fromEntries(['setTransform','clearRect','fillRect','beginPath','moveTo','lineTo','stroke','save','restore','translate','arc','fill'].map(k => [k,()=>{}]));
+  ctx.createRadialGradient = () => ({addColorStop(){}});
   const orbitClasses = new Set();
   const orbit = {classList:{contains:k=>orbitClasses.has(k)}};
   let captured = 0;
   const canvas = { getContext: () => ctx };
   const document = {
     hidden: false,
-    querySelector: selector => selector === '.main-inner.index' ? {} : !interactive ? null : selector === '.stellar-orbits' ? orbit : selector === '.stellar-vessel' ? {getBoundingClientRect:()=>({left:1920,top:1020,width:160,height:160})} : null,
+    querySelector: selector => selector === '.main-inner.index' ? {} : !interactive ? null : selector === '.stellar-orbits' ? orbit : selector === '.stellar-vessel' ? {getBoundingClientRect:()=>({left:centerX-80,top:1020,bottom:1180,width:160,height:160})} : null,
     getElementById: id => id === 'neural-background' ? canvas : null,
     documentElement: { classList: { toggle(k,on) { on ? classes.add(k) : classes.delete(k); } } },
     addEventListener(k,fn) { (handlers[k] ||= []).push(fn); },
-    dispatchEvent(e) { if(e.type === 'star-population') populations.push(e.detail); if(e.type === 'star-captured' && ++captured >= Math.ceil(populations.at(-1)/2)) orbitClasses.add('is-gathering'); for(const f of handlers[e.type] || []) f(e); }
+    dispatchEvent(e) { if(e.type === 'star-population') populations.push(e.detail); if(e.type === 'stellar-progress') captured=e.detail; for(const f of handlers[e.type] || []) f(e); }
   };
   const env = { document, navigator: {hardwareConcurrency:low ? 2 : 8,deviceMemory:low ? 2 : 8},
     innerWidth:4000,innerHeight:2200,devicePixelRatio:3,
@@ -27,7 +28,7 @@ function background(low = false, interactive = false) {
     CustomEvent:class { constructor(type,init){this.type=type;this.detail=init.detail;} },Event:class {constructor(type){this.type=type;}}
   };
   if (interactive) { env.Math=Object.create(Math); env.Math.random=()=>.5; }
-  env.window={addEventListener:document.addEventListener.bind(document)};
+  env.window={StellarPhysics:require('../source/js/stellar-physics.js'),addEventListener:document.addEventListener.bind(document)};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../source/js/neural-background.js'),'utf8'),env);
   return {canvas,populations,classes,document,frames,get captured(){return captured;}, tick(t) {const f=[...frames.values()];frames.clear();for(const cb of f)cb(t);} };
 }
@@ -80,7 +81,34 @@ test('hovering alone guides stars into orbit, stops at half, and cannot click-ad
   assert.equal(b.captured,0);
   b.document.dispatchEvent({type:'pointermove',pointerType:'mouse',clientX:2000,clientY:1100});
   b.tick(60);
+  assert.equal(b.captured,0); // No teleport or instant capture.
+  for(let t=90;t<12000;t+=30) b.tick(t);
   assert.equal(b.captured,128);
-  b.tick(90);
-  assert.equal(b.captured,128);
+  assert.ok(b.populations.length>1); // Burst completes and a fresh round appears.
 });
+
+test('the star does not capture particles outside the fixed local radius',()=>{
+  const b=background(false,true,2300);
+  b.document.dispatchEvent({type:'pointermove',pointerType:'mouse',clientX:2300,clientY:1100});
+  for(let t=30;t<6000;t+=30) b.tick(t);
+  assert.equal(b.captured,0);
+});
+test('orbital integration preserves position continuity and converges at different frame rates',()=>{
+  const {step}=require('../source/js/stellar-physics.js');
+  for(const hz of [20,30,45,60]) {
+    const p={x:135,y:0,ox:0,oy:0};
+    for(let i=0;i<hz*8;i++) {
+      const x=p.x,y=p.y;
+      step(p,0,0,50,1/hz);
+      assert.ok(Number.isFinite(p.x+p.y));
+      assert.ok(Math.hypot(p.x-x,p.y-y)<8);
+    }
+    assert.ok(Math.abs(Math.hypot(p.x,p.y)-50)<8);
+  }
+  const center={x:0,y:0,ox:0,oy:0};
+  step(center,0,0,30,100);
+  assert.ok(Number.isFinite(center.x+center.y));
+  assert.ok(Math.hypot(center.x,center.y)<2);
+});
+
+
