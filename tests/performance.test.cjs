@@ -7,7 +7,7 @@ function background(low = false, interactive = false, centerX = 2000, viewport =
   const handlers = {}, frames = new Map(), populations = [];
   let id = 0;
   const classes = new Set();
-  const ctx = Object.fromEntries(['setTransform','clearRect','fillRect','beginPath','moveTo','lineTo','stroke','save','restore','translate','arc','fill'].map(k => [k,()=>{}]));
+  const ctx = Object.fromEntries(['setTransform','clearRect','fillRect','beginPath','moveTo','lineTo','stroke','save','restore','translate','arc','fill','scale'].map(k => [k,()=>{}]));
   ctx.createRadialGradient = () => ({addColorStop(){}});
   const orbitClasses = new Set();
   const orbit = {classList:{contains:k=>orbitClasses.has(k)}};
@@ -30,7 +30,8 @@ function background(low = false, interactive = false, centerX = 2000, viewport =
   };
   if (interactive) { env.Math=Object.create(Math); env.Math.random=()=>.5; }
   const physics=require('../source/js/stellar-physics.js');
-  env.window={StellarPhysics:{...physics,step(p,...args){tracked.add(p);return physics.step(p,...args);}},addEventListener:document.addEventListener.bind(document)};
+  const renderer=require('../source/js/stellar-renderer.js');
+  env.window={StellarRenderer:interactive?{...renderer,create:()=>({draw(){}})}:null,StellarPhysics:{...physics,step(p,...args){tracked.add(p);return physics.step(p,...args);}},addEventListener:document.addEventListener.bind(document)};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../source/js/neural-background.js'),'utf8'),env);
   return {canvas,populations,classes,document,frames,get captured(){return captured;},get peakCaptured(){return peakCaptured;},tracked, tick(t) {const f=[...frames.values()];frames.clear();for(const cb of f)cb(t);} };
 }

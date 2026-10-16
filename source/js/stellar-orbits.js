@@ -10,16 +10,17 @@
     <p class="stellar-hint">移动鼠标引导星辰，靠近恒星自然入轨</p>
     <p class="stellar-message" role="status" aria-live="polite"></p>`;
   home.append(game);
-  let total = 0;
+  let total = 0, captured = 0;
   const target = window.StellarPhysics?.threshold || 188;
   const count = game.querySelector('.stellar-count');
   const message = game.querySelector('.stellar-message');
   document.addEventListener('star-population', event => {
     total = event.detail;
-    count.textContent = `0 / ${target}`;
+    count.textContent = `${captured} / ${target}`;
     game.title = `共 ${total} 颗星辰，${target} 颗进入轨道后绽放`;
   });
   document.addEventListener('stellar-progress', event => {
+    captured = event.detail;
     count.textContent = `${event.detail} / ${target}`;
   });
   document.addEventListener('stellar-message', event => { message.textContent = event.detail; });

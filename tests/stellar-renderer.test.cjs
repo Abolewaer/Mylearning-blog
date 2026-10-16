@@ -1,0 +1,32 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const vm=require('node:vm');
+const fs=require('node:fs');
+const path=require('node:path');
+const {project,occluded}=require('../source/js/stellar-renderer.js');
+test('inclined rings have depth and a flattened perspective',()=>{
+  const front=project(0,80), back=project(0,-80);
+  assert.ok(front.depth>0 && back.depth<0);
+  assert.ok(Math.hypot(front.x,front.y)<40);
+  assert.equal(occluded(back.x,back.y,back.depth),true);
+  assert.equal(occluded(front.x,front.y,front.depth),false);
+  const side=project(80,0);
+  assert.ok(Math.abs(Math.hypot(side.x,side.y)-80)<.001);
+});
+test('the globe builds a bounded cache in idle chunks and draws without rasterizing particles again',()=>{
+  const callbacks=[], canvases=[];
+  let dots=0, blits=0;
+  const ctx={scale(){},translate(){},beginPath(){},arc(){},fill(){},stroke(){},fillRect(){dots++;}};
+  const document={createElement(){const c={getContext:()=>ctx};canvases.push(c);return c;}};
+  const sandbox={module:{exports:{}},window:{requestIdleCallback:fn=>callbacks.push(fn)}};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../source/js/stellar-renderer.js'),'utf8'),sandbox);
+  const scene=sandbox.module.exports.create(document,2);
+  assert.equal(canvases.length,1);
+  while(callbacks.length) callbacks.shift()();
+  assert.equal(canvases.length,12);
+  assert.ok(canvases.reduce((sum,c)=>sum+c.width*c.height*4,0)<9*1024*1024);
+  const before=dots;
+  for(let i=0;i<1000;i++) scene.draw({drawImage(){blits++;}},i*22);
+  assert.equal(dots,before);
+  assert.ok(blits<=2000);
+});
