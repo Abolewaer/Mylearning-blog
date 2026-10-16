@@ -20,7 +20,7 @@
   let pool = [];
   const physics = window.StellarPhysics;
   const renderer = window.StellarRenderer;
-  let globe = null;
+  let globe = null, globeSway = 0;
   const GRAVITY_RADIUS = 140;
   const TARGET = physics?.threshold || 188;
   const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, 24);
@@ -92,6 +92,11 @@
       advancePhase();
     }
     ctx.clearRect(0, 0, width, height);
+    if (orbitBox) {
+      const cx=orbitBox.left+orbitBox.width/2;
+      const target=Math.sin(now*.00045)*.035+(pointer.active?Math.max(-1,Math.min(1,(pointer.x-cx)/220))*.09:0);
+      globeSway+=(target-globeSway)*(1-Math.exp(-seconds*3));
+    }
     drawSun(now);
     for (const star of stars) {
       const guided = updateOrbit(star, seconds);
@@ -215,7 +220,7 @@
       }
     }
     const visible = view(p);
-    if (!old.hidden && !visible.hidden) line(old, visible, .32 * visible.alpha, '192, 202, 174');
+    if (!old.hidden && !visible.hidden) line(old, visible, .32 * visible.alpha, '110, 224, 207');
     return true;
   }
   function advancePhase() {
@@ -243,7 +248,7 @@
   function view(p) {
     if (!renderer || !p.orbit || !orbitBox) return {x:p.x,y:p.y,alpha:1,size:1,hidden:false};
     const cx=orbitBox.left+orbitBox.width/2, cy=orbitBox.top+orbitBox.height/2;
-    const projection=renderer.project(p.x-cx,p.y-cy);
+    const projection=renderer.project(p.x-cx,p.y-cy,globeSway);
     const mix=p.viewMix || 0;
     const x=(p.x-cx)*(1-mix)+projection.x*mix;
     const y=(p.y-cy)*(1-mix)+projection.y*mix;
@@ -256,16 +261,13 @@
     ctx.save();
     ctx.translate(orbitBox.left + orbitBox.width/2, orbitBox.top + orbitBox.height/2);
     if (globe) {
-      const shrink=phase==='collapse'?1-Math.min(phaseAge/1.8,1)*.16:1;
+      const t=Math.min(phaseAge/1.8,1);
+      const shrink=phase==='collapse'?1-t*t*(3-2*t)*.7:1;
       ctx.scale(shrink,shrink);
-      globe.draw(ctx, now);
+      globe.draw(ctx, now, globeSway, {phase,age:phaseAge});
     } else {
       ctx.fillStyle=glow; ctx.fillRect(-24,-24,48,48);
       ctx.fillStyle='#d2e9d5'; ctx.beginPath(); ctx.arc(0,0,4,0,Math.PI*2); ctx.fill();
-    }
-    if (phase === 'burst') {
-      ctx.strokeStyle = `rgba(211,204,170,${Math.max(0,.35-phaseAge*.15)})`;
-      ctx.beginPath(); ctx.arc(0,0,34+phaseAge*65,0,Math.PI*2); ctx.stroke();
     }
     ctx.restore();
   }
